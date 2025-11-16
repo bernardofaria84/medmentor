@@ -32,8 +32,11 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ.get('DB_NAME', 'medmentor_db')]
 
-# GridFS for file storage
-fs = gridfs.GridFS(client[os.environ.get('DB_NAME', 'medmentor_db')])
+# Create a synchronous client for GridFS (GridFS doesn't support async yet)
+from pymongo import MongoClient
+sync_client = MongoClient(mongo_url)
+sync_db = sync_client[os.environ.get('DB_NAME', 'medmentor_db')]
+fs = gridfs.GridFS(sync_db)
 
 # Create the main app
 app = FastAPI(title="MedMentor API")
