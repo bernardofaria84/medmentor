@@ -16,6 +16,7 @@ interface Stats {
 export default function MentorDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [menuVisible, setMenuVisible] = useState(false);
   const router = useRouter();
   const { user, logout } = useAuth();
 
