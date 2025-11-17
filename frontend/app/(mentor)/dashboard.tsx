@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
-import { Text, Card, Button, ActivityIndicator, Divider, Appbar, Menu } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Platform, Pressable } from 'react-native';
+import { Text, Card, ActivityIndicator, Appbar, Menu, IconButton } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../../services/api';
@@ -40,6 +40,11 @@ export default function MentorDashboard() {
     router.replace('/(mentor)/login');
   };
 
+  const navigateTo = (route: string) => {
+    console.log('Navigating to:', route);
+    router.push(route as any);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -50,16 +55,65 @@ export default function MentorDashboard() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text variant="headlineMedium" style={styles.welcomeText}>
-            Bem-vindo, Dr(a)!
-          </Text>
-          <Text variant="bodyMedium" style={styles.subtitle}>
-            Aqui está um resumo da sua atividade
-          </Text>
-        </View>
+      {/* Top Navigation Bar */}
+      <Appbar.Header style={styles.appbar}>
+        <Appbar.Content title="MedMentor" subtitle="Portal do Mentor" />
+        <Menu
+          visible={menuVisible}
+          onDismiss={() => setMenuVisible(false)}
+          anchor={
+            <Appbar.Action
+              icon="menu"
+              onPress={() => setMenuVisible(true)}
+              color="#ffffff"
+            />
+          }
+        >
+          <Menu.Item
+            onPress={() => {
+              setMenuVisible(false);
+              navigateTo('/(mentor)/dashboard');
+            }}
+            title="Dashboard"
+            leadingIcon="view-dashboard"
+          />
+          <Menu.Item
+            onPress={() => {
+              setMenuVisible(false);
+              navigateTo('/(mentor)/upload');
+            }}
+            title="Upload de Conteúdo"
+            leadingIcon="upload"
+          />
+          <Menu.Item
+            onPress={() => {
+              setMenuVisible(false);
+              navigateTo('/(mentor)/content');
+            }}
+            title="Gerenciar Conteúdo"
+            leadingIcon="folder"
+          />
+          <Menu.Item
+            onPress={() => {
+              setMenuVisible(false);
+              navigateTo('/(mentor)/profile');
+            }}
+            title="Meu Perfil"
+            leadingIcon="account"
+          />
+          <Menu.Item onPress={handleLogout} title="Sair" leadingIcon="logout" />
+        </Menu>
+      </Appbar.Header>
 
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text variant="headlineMedium" style={styles.welcomeText}>
+          Bem-vindo, Dr(a)!
+        </Text>
+        <Text variant="bodyMedium" style={styles.subtitle}>
+          Aqui está um resumo da sua atividade
+        </Text>
+
+        {/* Stats Grid */}
         <View style={styles.statsGrid}>
           <Card style={styles.statCard}>
             <Card.Content style={styles.statContent}>
@@ -98,51 +152,67 @@ export default function MentorDashboard() {
           </Card>
         </View>
 
-        <Card style={styles.actionCard}>
-          <Card.Content>
-            <Text variant="titleLarge" style={styles.actionTitle}>
-              Ações Rápidas
-            </Text>
-            <Divider style={styles.divider} />
-            <View style={styles.actions}>
-              <Button
-                mode="contained"
-                icon="upload"
-                onPress={() => router.push('/(mentor)/upload')}
-                style={styles.actionButton}
-              >
-                Upload de Conteúdo
-              </Button>
-              <Button
-                mode="outlined"
-                icon="folder"
-                onPress={() => router.push('/(mentor)/content')}
-                style={styles.actionButton}
-              >
-                Gerenciar Conteúdo
-              </Button>
-              <Button
-                mode="outlined"
-                icon="account"
-                onPress={() => router.push('/(mentor)/profile')}
-                style={styles.actionButton}
-              >
-                Editar Perfil
-              </Button>
-            </View>
-          </Card.Content>
-        </Card>
+        {/* Action Cards */}
+        <Text variant="titleLarge" style={styles.sectionTitle}>
+          Ações Rápidas
+        </Text>
 
-        {Platform.OS === 'web' && (
-          <Button
-            mode="text"
-            onPress={handleLogout}
-            style={styles.logoutButton}
-            textColor="#ef4444"
-          >
-            Sair
-          </Button>
-        )}
+        <Pressable onPress={() => navigateTo('/(mentor)/upload')}>
+          <Card style={[styles.actionCard, styles.primaryActionCard]}>
+            <Card.Content style={styles.actionCardContent}>
+              <View style={styles.actionCardLeft}>
+                <MaterialCommunityIcons name="upload" size={40} color="#ffffff" />
+              </View>
+              <View style={styles.actionCardRight}>
+                <Text variant="titleMedium" style={styles.actionCardTitle}>
+                  Upload de Conteúdo
+                </Text>
+                <Text variant="bodySmall" style={styles.actionCardDescription}>
+                  Envie novos materiais em PDF
+                </Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={24} color="#ffffff" />
+            </Card.Content>
+          </Card>
+        </Pressable>
+
+        <Pressable onPress={() => navigateTo('/(mentor)/content')}>
+          <Card style={styles.actionCard}>
+            <Card.Content style={styles.actionCardContent}>
+              <View style={styles.actionCardLeft}>
+                <MaterialCommunityIcons name="folder" size={40} color="#2563eb" />
+              </View>
+              <View style={styles.actionCardRight}>
+                <Text variant="titleMedium" style={styles.actionCardTitleDark}>
+                  Gerenciar Conteúdo
+                </Text>
+                <Text variant="bodySmall" style={styles.actionCardDescriptionDark}>
+                  Veja e gerencie seus materiais
+                </Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={24} color="#2563eb" />
+            </Card.Content>
+          </Card>
+        </Pressable>
+
+        <Pressable onPress={() => navigateTo('/(mentor)/profile')}>
+          <Card style={styles.actionCard}>
+            <Card.Content style={styles.actionCardContent}>
+              <View style={styles.actionCardLeft}>
+                <MaterialCommunityIcons name="account" size={40} color="#2563eb" />
+              </View>
+              <View style={styles.actionCardRight}>
+                <Text variant="titleMedium" style={styles.actionCardTitleDark}>
+                  Editar Perfil
+                </Text>
+                <Text variant="bodySmall" style={styles.actionCardDescriptionDark}>
+                  Atualize suas informações
+                </Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={24} color="#2563eb" />
+            </Card.Content>
+          </Card>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -159,14 +229,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f8fafc',
   },
+  appbar: {
+    backgroundColor: '#2563eb',
+  },
   scrollContent: {
     padding: 24,
     maxWidth: 1200,
     width: '100%',
     alignSelf: 'center',
-  },
-  header: {
-    marginBottom: 24,
   },
   welcomeText: {
     fontWeight: 'bold',
@@ -175,17 +245,18 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: '#64748b',
+    marginBottom: 24,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginHorizontal: -8,
-    marginBottom: 24,
+    marginBottom: 32,
   },
   statCard: {
-    flex: Platform.OS === 'web' ? '1 1 300px' : 1,
+    flex: 1,
     margin: 8,
-    minWidth: Platform.OS === 'web' ? 250 : undefined,
+    minWidth: Platform.OS === 'web' ? 250 : 150,
     backgroundColor: '#ffffff',
   },
   statContent: {
@@ -202,25 +273,43 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  actionCard: {
-    backgroundColor: '#ffffff',
-    marginBottom: 24,
-  },
-  actionTitle: {
+  sectionTitle: {
     fontWeight: 'bold',
     color: '#1e293b',
-    marginBottom: 8,
+    marginBottom: 16,
   },
-  divider: {
-    marginVertical: 16,
+  actionCard: {
+    marginBottom: 16,
+    backgroundColor: '#ffffff',
   },
-  actions: {
-    gap: 12,
+  primaryActionCard: {
+    backgroundColor: '#2563eb',
   },
-  actionButton: {
-    width: '100%',
+  actionCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
   },
-  logoutButton: {
-    marginTop: 16,
+  actionCardLeft: {
+    marginRight: 16,
+  },
+  actionCardRight: {
+    flex: 1,
+  },
+  actionCardTitle: {
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  actionCardTitleDark: {
+    fontWeight: 'bold',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  actionCardDescription: {
+    color: '#e0e7ff',
+  },
+  actionCardDescriptionDark: {
+    color: '#64748b',
   },
 });
