@@ -24,7 +24,7 @@ export default function LoginScreen() {
 
     try {
       await login(email, password);
-      router.replace('/(tabs)/home');
+      // Não faz replace aqui, deixa o index.tsx redirecionar baseado no user_type
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login');
     } finally {
