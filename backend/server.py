@@ -22,6 +22,11 @@ from auth_utils import (
     get_current_user
 )
 from rag_service import rag_service
+from analytics_service import (
+    get_queries_analytics,
+    get_ratings_analytics,
+    get_content_analytics
+)
 
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
