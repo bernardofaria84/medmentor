@@ -394,6 +394,39 @@ async def upload_content(
         logger.error(f"Error uploading content: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ==================== ANALYTICS ENDPOINTS ====================
+
+@api_router.get("/mentor/analytics/queries")
+async def get_queries_analytics_endpoint(current_user: dict = Depends(get_current_user)):
+    """Get detailed queries analytics"""
+    
+    if current_user["user_type"] != "mentor":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    analytics = await get_queries_analytics(db, current_user["user_id"])
+    return analytics
+
+@api_router.get("/mentor/analytics/ratings")
+async def get_ratings_analytics_endpoint(current_user: dict = Depends(get_current_user)):
+    """Get detailed ratings analytics"""
+    
+    if current_user["user_type"] != "mentor":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    analytics = await get_ratings_analytics(db, current_user["user_id"])
+    return analytics
+
+@api_router.get("/mentor/analytics/content")
+async def get_content_analytics_endpoint(current_user: dict = Depends(get_current_user)):
+    """Get detailed content analytics"""
+    
+    if current_user["user_type"] != "mentor":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    analytics = await get_content_analytics(db, current_user["user_id"])
+    return analytics
+
 @api_router.get("/mentor/content", response_model=List[ContentItem])
 async def list_mentor_content(current_user: dict = Depends(get_current_user)):
     """List all content for current mentor"""
