@@ -99,3 +99,7 @@ Thumbs.db
 *_old.py
 *_backup.py
 *.bak
+-e 
+# Environment files
+*.env
+*.env.*
