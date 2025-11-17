@@ -94,6 +94,15 @@ export default function LoginScreen() {
               >
                 Não tem conta? Cadastre-se
               </Button>
+              
+              <Button
+                mode="text"
+                onPress={() => router.push('/(mentor)/login')}
+                disabled={loading}
+                style={styles.linkButton}
+              >
+                Sou Mentor - Entrar no Portal
+              </Button>
             </Surface>
 
             <Text variant="bodySmall" style={styles.testCredentials}>
