@@ -26,6 +26,9 @@ export default function MentorLayout() {
       <Stack.Screen name="content" options={{ title: 'Meu Conteúdo' }} />
       <Stack.Screen name="upload" options={{ title: 'Upload de Conteúdo' }} />
       <Stack.Screen name="profile" options={{ title: 'Meu Perfil' }} />
+      <Stack.Screen name="analytics-queries" options={{ title: 'Análise de Consultas' }} />
+      <Stack.Screen name="analytics-ratings" options={{ title: 'Análise de Avaliações' }} />
+      <Stack.Screen name="analytics-content" options={{ title: 'Análise de Conteúdo' }} />
     </Stack>
   );
 }
