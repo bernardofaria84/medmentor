@@ -4,18 +4,23 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Index() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading) {
-      if (isAuthenticated) {
-        router.replace('/(tabs)/home');
+      if (isAuthenticated && user) {
+        // Redireciona baseado no tipo de usuário
+        if (user.user_type === 'mentor') {
+          router.replace('/(mentor)/dashboard');
+        } else {
+          router.replace('/(tabs)/home');
+        }
       } else {
         router.replace('/(auth)/login');
       }
     }
-  }, [isAuthenticated, loading]);
+  }, [isAuthenticated, loading, user]);
 
   return (
     <View style={styles.container}>
