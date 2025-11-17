@@ -113,43 +113,67 @@ export default function MentorDashboard() {
           Aqui está um resumo da sua atividade
         </Text>
 
-        {/* Stats Grid */}
+        {/* Stats Grid - Clicáveis */}
         <View style={styles.statsGrid}>
-          <Card style={styles.statCard}>
-            <Card.Content style={styles.statContent}>
-              <MaterialCommunityIcons name="message-text" size={32} color="#2563eb" />
-              <Text variant="headlineMedium" style={styles.statNumber}>
-                {stats?.total_queries || 0}
-              </Text>
-              <Text variant="bodySmall" style={styles.statLabel}>
-                Consultas Respondidas
-              </Text>
-            </Card.Content>
-          </Card>
+          <Pressable onPress={() => navigateTo('/(mentor)/analytics-queries')}>
+            <Card style={styles.statCard}>
+              <Card.Content style={styles.statContent}>
+                <MaterialCommunityIcons name="message-text" size={32} color="#2563eb" />
+                <Text variant="headlineMedium" style={styles.statNumber}>
+                  {stats?.total_queries || 0}
+                </Text>
+                <Text variant="bodySmall" style={styles.statLabel}>
+                  Consultas Respondidas
+                </Text>
+                <MaterialCommunityIcons 
+                  name="chevron-right" 
+                  size={20} 
+                  color="#94a3b8" 
+                  style={{ position: 'absolute', top: 8, right: 8 }}
+                />
+              </Card.Content>
+            </Card>
+          </Pressable>
 
-          <Card style={styles.statCard}>
-            <Card.Content style={styles.statContent}>
-              <MaterialCommunityIcons name="star" size={32} color="#f59e0b" />
-              <Text variant="headlineMedium" style={styles.statNumber}>
-                {stats?.average_rating.toFixed(1) || '0.0'}
-              </Text>
-              <Text variant="bodySmall" style={styles.statLabel}>
-                Avaliação Média
-              </Text>
-            </Card.Content>
-          </Card>
+          <Pressable onPress={() => navigateTo('/(mentor)/analytics-ratings')}>
+            <Card style={styles.statCard}>
+              <Card.Content style={styles.statContent}>
+                <MaterialCommunityIcons name="star" size={32} color="#f59e0b" />
+                <Text variant="headlineMedium" style={styles.statNumber}>
+                  {stats?.average_rating.toFixed(1) || '0.0'}
+                </Text>
+                <Text variant="bodySmall" style={styles.statLabel}>
+                  Avaliação Média
+                </Text>
+                <MaterialCommunityIcons 
+                  name="chevron-right" 
+                  size={20} 
+                  color="#94a3b8" 
+                  style={{ position: 'absolute', top: 8, right: 8 }}
+                />
+              </Card.Content>
+            </Card>
+          </Pressable>
 
-          <Card style={styles.statCard}>
-            <Card.Content style={styles.statContent}>
-              <MaterialCommunityIcons name="file-document" size={32} color="#10b981" />
-              <Text variant="headlineMedium" style={styles.statNumber}>
-                {stats?.total_content || 0}
-              </Text>
-              <Text variant="bodySmall" style={styles.statLabel}>
-                Conteúdos Publicados
-              </Text>
-            </Card.Content>
-          </Card>
+          <Pressable onPress={() => navigateTo('/(mentor)/analytics-content')}>
+            <Card style={styles.statCard}>
+              <Card.Content style={styles.statContent}>
+                <MaterialCommunityIcons name="file-document" size={32} color="#10b981" />
+                <Text variant="headlineMedium" style={styles.statNumber}>
+                  {stats?.total_content || 0}
+                </Text>
+                <Text variant="bodySmall" style={styles.statLabel}>
+                  Conteúdos Publicados
+                </Text>
+                <MaterialCommunityIcons 
+                  name="chevron-right" 
+                  size={20} 
+                  color="#94a3b8" 
+                  style={{ position: 'absolute', top: 8, right: 8 }}
+                />
+              </Card.Content>
+            </Card>
+          </Pressable>
         </View>
 
         {/* Action Cards */}
