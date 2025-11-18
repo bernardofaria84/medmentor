@@ -747,30 +747,30 @@ async def chat_with_mentor(
             ]
             
             logger.info(f"Found {len(top_chunks)} relevant chunks with similarities: {[f'{s:.2f}' for s in similarity_scores]}")
-        
-        # Get mentor's AI agent profile
-        mentor_profile = None
-        if mentor.get("agent_profile"):
-            # Generate full system prompt with personality
-            mentor_profile = mentor_profile_service.generate_system_prompt(
-                mentor_profile={
-                    "profile_text": mentor["agent_profile"],
-                    "style_traits": mentor.get("style_traits", "")
-                },
+            
+            # Get mentor's AI agent profile
+            mentor_profile = None
+            if mentor.get("agent_profile"):
+                # Generate full system prompt with personality
+                mentor_profile = mentor_profile_service.generate_system_prompt(
+                    mentor_profile={
+                        "profile_text": mentor["agent_profile"],
+                        "style_traits": mentor.get("style_traits", "")
+                    },
+                    mentor_name=mentor["full_name"],
+                    mentor_specialty=mentor["specialty"]
+                )
+            
+            # Generate RAG response with personalized agent
+            response_text, citations, ai_used = await multi_ai_rag_service.generate_rag_response(
+                question=chat_request.question,
+                context_chunks=top_chunks,
                 mentor_name=mentor["full_name"],
-                mentor_specialty=mentor["specialty"]
+                mentor_profile=mentor_profile,
+                preferred_ai="openai"  # Start with OpenAI, will fallback to Claude if needed
             )
-        
-        # Generate RAG response with personalized agent
-        response_text, citations, ai_used = await multi_ai_rag_service.generate_rag_response(
-            question=chat_request.question,
-            context_chunks=top_chunks,
-            mentor_name=mentor["full_name"],
-            mentor_profile=mentor_profile,
-            preferred_ai="openai"  # Start with OpenAI, will fallback to Claude if needed
-        )
-        
-        logger.info(f"Chat response generated using {ai_used}")
+            
+            logger.info(f"Chat response generated using {ai_used}")
     
     # Save bot's response
     bot_message_id = str(uuid.uuid4())
