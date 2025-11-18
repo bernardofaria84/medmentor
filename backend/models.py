@@ -66,6 +66,8 @@ class MentorProfile(BaseModel):
     specialty: str
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
+    agent_profile: Optional[str] = None  # AI agent personality profile
+    style_traits: Optional[str] = None   # Quick summary of communication style
     created_at: datetime
 
 class MentorListItem(BaseModel):
