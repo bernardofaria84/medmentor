@@ -48,6 +48,18 @@ fs = gridfs.GridFS(sync_db)
 # Create the main app
 app = FastAPI(title="MedMentor API")
 
+# Add middleware to log validation errors
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    logger.error(f"Validation error on {request.url}: {exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": str(exc.body)[:500]}
+    )
+
 # Create API router
 api_router = APIRouter(prefix="/api")
 
