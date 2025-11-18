@@ -25,6 +25,7 @@ export default function RootLayout() {
             <Stack.Screen name="(auth)/login" />
             <Stack.Screen name="(auth)/signup" />
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(mentor)" />
             <Stack.Screen name="chat/[mentorId]" />
             <Stack.Screen name="conversation/[conversationId]" />
           </Stack>
