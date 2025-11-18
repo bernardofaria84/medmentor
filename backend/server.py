@@ -61,9 +61,21 @@ async def validation_exception_handler(request, exc):
     print(f"Body: {exc.body}")
     print(f"======================================")
     logger.error(f"Validation error on {request.url}: {error_details}")
+    
+    # Serialize errors safely
+    safe_errors = []
+    for error in error_details:
+        safe_error = {
+            "type": error.get("type"),
+            "loc": error.get("loc"),
+            "msg": error.get("msg"),
+            "input": str(error.get("input"))[:100]
+        }
+        safe_errors.append(safe_error)
+    
     return JSONResponse(
         status_code=422,
-        content={"detail": error_details, "body": str(exc.body)[:500] if exc.body else "No body"}
+        content={"detail": safe_errors, "body": str(exc.body)[:500] if exc.body else "No body"}
     )
 
 # Create API router
