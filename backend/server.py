@@ -22,6 +22,8 @@ from auth_utils import (
     get_current_user
 )
 from rag_service import rag_service
+from multi_ai_rag_service import multi_ai_rag_service
+from mentor_profile_service import mentor_profile_service
 from analytics_service import (
     get_queries_analytics,
     get_ratings_analytics,
