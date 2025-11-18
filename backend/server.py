@@ -301,6 +301,8 @@ async def upload_content(
 ):
     """Upload content (PDF) for a mentor"""
     
+    logger.info(f"Upload request received - Title: {title}, File: {file.filename}, User: {current_user['user_id']}")
+    
     if current_user["user_type"] != "mentor":
         raise HTTPException(status_code=403, detail="Access denied")
     
