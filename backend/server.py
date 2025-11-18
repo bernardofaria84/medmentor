@@ -516,6 +516,100 @@ async def list_mentor_content(current_user: dict = Depends(get_current_user)):
         for content in contents
     ]
 
+@api_router.get("/mentor/content/{content_id}")
+async def get_content_details(content_id: str, current_user: dict = Depends(get_current_user)):
+    """Get detailed information about a specific content item"""
+    
+    if current_user["user_type"] != "mentor":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    content = await db.mentor_content.find_one({
+        "_id": content_id,
+        "mentor_id": current_user["user_id"]
+    })
+    
+    if not content:
+        raise HTTPException(status_code=404, detail="Content not found")
+    
+    # Count chunks for this content
+    chunk_count = await db.content_chunks.count_documents({"content_id": content_id})
+    
+    return {
+        "id": content["_id"],
+        "title": content["title"],
+        "content_type": content["content_type"],
+        "status": content["status"],
+        "uploaded_at": content["uploaded_at"],
+        "processed_text": content.get("processed_text", ""),
+        "chunk_count": chunk_count
+    }
+
+@api_router.delete("/mentor/content/{content_id}")
+async def delete_content(content_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a specific content item and all its chunks"""
+    
+    if current_user["user_type"] != "mentor":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Verify content belongs to mentor
+    content = await db.mentor_content.find_one({
+        "_id": content_id,
+        "mentor_id": current_user["user_id"]
+    })
+    
+    if not content:
+        raise HTTPException(status_code=404, detail="Content not found")
+    
+    # Delete all chunks associated with this content
+    delete_chunks_result = await db.content_chunks.delete_many({"content_id": content_id})
+    
+    # Delete the content itself
+    await db.mentor_content.delete_one({"_id": content_id})
+    
+    logger.info(f"Deleted content {content_id} and {delete_chunks_result.deleted_count} chunks")
+    
+    return {
+        "message": "Content deleted successfully",
+        "deleted_chunks": delete_chunks_result.deleted_count
+    }
+
+@api_router.post("/mentor/content/bulk-delete")
+async def bulk_delete_content(
+    content_ids: List[str], 
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete multiple content items at once"""
+    
+    if current_user["user_type"] != "mentor":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    deleted_count = 0
+    deleted_chunks_total = 0
+    
+    for content_id in content_ids:
+        # Verify content belongs to mentor
+        content = await db.mentor_content.find_one({
+            "_id": content_id,
+            "mentor_id": current_user["user_id"]
+        })
+        
+        if content:
+            # Delete chunks
+            delete_chunks_result = await db.content_chunks.delete_many({"content_id": content_id})
+            deleted_chunks_total += delete_chunks_result.deleted_count
+            
+            # Delete content
+            await db.mentor_content.delete_one({"_id": content_id})
+            deleted_count += 1
+    
+    logger.info(f"Bulk deleted {deleted_count} contents and {deleted_chunks_total} chunks")
+    
+    return {
+        "message": f"Successfully deleted {deleted_count} content(s)",
+        "deleted_contents": deleted_count,
+        "deleted_chunks": deleted_chunks_total
+    }
+
 @api_router.get("/mentor/stats", response_model=MentorStats)
 async def get_mentor_stats(current_user: dict = Depends(get_current_user)):
     """Get mentor dashboard statistics"""
