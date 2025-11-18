@@ -60,6 +60,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const { access_token, user_id, user_type } = response.data;
       
+      console.log('✅ Login successful:', { user_id, user_type, email });
+      
       setToken(access_token);
       const userData: User = {
         id: user_id,
@@ -71,6 +73,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       await AsyncStorage.setItem('authToken', access_token);
       await AsyncStorage.setItem('user', JSON.stringify(userData));
+
+      console.log('✅ User data saved to storage:', userData);
 
       // Fetch full profile
       await fetchProfile(access_token, user_type);
