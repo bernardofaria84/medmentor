@@ -46,7 +46,7 @@ Your task is to extract and describe:
 2. Tone of voice (empathetic, authoritative, encouraging, scientific, etc.)
 3. Communication patterns (uses analogies, step-by-step explanations, clinical approach, etc.)
 4. Key characteristics that make this doctor's approach unique
-5. Common phrases or expressions they use
+5. Common phrases or expressions they use (especially if in Portuguese)
 
 Content to analyze:
 ---
@@ -55,14 +55,19 @@ Content to analyze:
 
 Based on this analysis, create a detailed personality profile that will be used to make an AI assistant respond EXACTLY like Dr. {mentor_name}.
 
+IMPORTANT: The AI assistant will ALWAYS respond in Portuguese (Brazil), so:
+- If you find Portuguese expressions in the content, highlight them
+- Analyze how the doctor communicates in Portuguese
+- The final AI will use Brazilian Portuguese exclusively
+
 Format your response as a structured profile with the following sections:
 - WRITING_STYLE: (description)
 - TONE: (description)
 - COMMUNICATION_APPROACH: (description)
 - UNIQUE_CHARACTERISTICS: (description)
-- SAMPLE_PHRASES: (list of characteristic phrases)
+- SAMPLE_PHRASES: (list of characteristic phrases, preferably in Portuguese if found)
 
-Keep it concise but comprehensive. This profile will be used as a system prompt for an AI agent."""
+Keep it concise but comprehensive. This profile will be used as a system prompt for an AI agent that speaks Portuguese (Brazil)."""
 
         try:
             # Try OpenAI first
