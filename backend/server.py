@@ -580,7 +580,7 @@ async def chat_with_mentor(
     await db.messages.insert_one(user_message_doc)
     
     # Generate embedding for the question
-    question_embedding = await rag_service.generate_embedding(chat_request.question)
+    question_embedding = await multi_ai_rag_service.generate_embedding(chat_request.question)
     
     # Search for relevant content chunks
     chunks = await db.content_chunks.find({
@@ -591,10 +591,11 @@ async def chat_with_mentor(
         # No content available for this mentor
         response_text = f"I apologize, but Dr. {mentor['full_name']} hasn't uploaded any content yet. Please check back later or contact the mentor directly."
         citations = []
+        ai_used = "none"
     else:
         # Get embeddings and perform similarity search
         chunk_embeddings = [chunk["embedding"] for chunk in chunks]
-        top_indices = rag_service.cosine_similarity_search(
+        top_indices = multi_ai_rag_service.cosine_similarity_search(
             question_embedding, 
             chunk_embeddings, 
             top_k=5
@@ -610,12 +611,29 @@ async def chat_with_mentor(
             for i in top_indices
         ]
         
-        # Generate RAG response
-        response_text, citations = await rag_service.generate_rag_response(
+        # Get mentor's AI agent profile
+        mentor_profile = None
+        if mentor.get("agent_profile"):
+            # Generate full system prompt with personality
+            mentor_profile = mentor_profile_service.generate_system_prompt(
+                mentor_profile={
+                    "profile_text": mentor["agent_profile"],
+                    "style_traits": mentor.get("style_traits", "")
+                },
+                mentor_name=mentor["full_name"],
+                mentor_specialty=mentor["specialty"]
+            )
+        
+        # Generate RAG response with personalized agent
+        response_text, citations, ai_used = await multi_ai_rag_service.generate_rag_response(
             question=chat_request.question,
             context_chunks=top_chunks,
-            mentor_name=mentor["full_name"]
+            mentor_name=mentor["full_name"],
+            mentor_profile=mentor_profile,
+            preferred_ai="openai"  # Start with OpenAI, will fallback to Claude if needed
         )
+        
+        logger.info(f"Chat response generated using {ai_used}")
     
     # Save bot's response
     bot_message_id = str(uuid.uuid4())
