@@ -54,10 +54,16 @@ from fastapi.responses import JSONResponse
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
-    logger.error(f"Validation error on {request.url}: {exc.errors()}")
+    error_details = exc.errors()
+    print(f"========== VALIDATION ERROR ==========")
+    print(f"URL: {request.url}")
+    print(f"Errors: {error_details}")
+    print(f"Body: {exc.body}")
+    print(f"======================================")
+    logger.error(f"Validation error on {request.url}: {error_details}")
     return JSONResponse(
         status_code=422,
-        content={"detail": exc.errors(), "body": str(exc.body)[:500]}
+        content={"detail": error_details, "body": str(exc.body)[:500] if exc.body else "No body"}
     )
 
 # Create API router
