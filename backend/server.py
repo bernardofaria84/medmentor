@@ -360,14 +360,47 @@ async def upload_content(
                 {"$set": {"processed_text": pdf_text}}
             )
             
-            # Process content through RAG service (chunking + embeddings)
-            chunks_processed = await rag_service.process_pdf_content(
+            # Process content through new Multi-AI RAG service (chunking + embeddings)
+            chunks_processed = await multi_ai_rag_service.process_pdf_content(
                 pdf_text=pdf_text,
                 mentor_id=current_user["user_id"],
                 content_id=content_id,
                 title=title,
                 db=db
             )
+            
+            # Generate/update AI agent profile for this mentor
+            logger.info(f"Generating AI agent profile for mentor {current_user['user_id']}")
+            try:
+                # Get current mentor profile
+                mentor_doc = await db.mentors.find_one({"_id": current_user["user_id"]})
+                existing_profile = mentor_doc.get("agent_profile")
+                
+                # Analyze content and generate/update profile
+                profile_data = await mentor_profile_service.analyze_content_and_generate_profile(
+                    content_text=pdf_text,
+                    mentor_name=mentor_doc["full_name"],
+                    mentor_specialty=mentor_doc["specialty"],
+                    existing_profile=existing_profile
+                )
+                
+                # Update mentor document with new profile
+                await db.mentors.update_one(
+                    {"_id": current_user["user_id"]},
+                    {
+                        "$set": {
+                            "agent_profile": profile_data["profile_text"],
+                            "style_traits": profile_data["style_traits"],
+                            "profile_updated_at": datetime.utcnow()
+                        }
+                    }
+                )
+                
+                logger.info(f"AI agent profile updated successfully (source: {profile_data['analysis_source']})")
+                
+            except Exception as profile_error:
+                logger.error(f"Error generating agent profile: {profile_error}")
+                # Don't fail the upload if profile generation fails
             
             # Mark as completed
             await db.mentor_content.update_one(
