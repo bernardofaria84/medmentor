@@ -9,14 +9,19 @@ export default function Index() {
 
   useEffect(() => {
     if (!loading) {
+      console.log('🔄 Index.tsx redirecting:', { isAuthenticated, user });
+      
       if (isAuthenticated && user) {
         // Redireciona baseado no tipo de usuário
         if (user.user_type === 'mentor') {
+          console.log('➡️ Redirecting to mentor dashboard');
           router.replace('/(mentor)/dashboard');
         } else {
+          console.log('➡️ Redirecting to user home');
           router.replace('/(tabs)/home');
         }
       } else {
+        console.log('➡️ Redirecting to login');
         router.replace('/(auth)/login');
       }
     }
