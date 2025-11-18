@@ -47,7 +47,11 @@ export default function UploadContent() {
       
       // For web and mobile compatibility
       if (Platform.OS === 'web') {
-        formData.append('file', file);
+        // On web, we need to fetch the file as a Blob first
+        const response = await fetch(file.uri);
+        const blob = await response.blob();
+        const webFile = new File([blob], file.name, { type: 'application/pdf' });
+        formData.append('file', webFile);
       } else {
         formData.append('file', {
           uri: file.uri,
