@@ -719,23 +719,34 @@ async def chat_with_mentor(
         citations = []
         ai_used = "none"
     else:
-        # Get embeddings and perform similarity search
+        # Get embeddings and perform similarity search with minimum threshold
         chunk_embeddings = [chunk["embedding"] for chunk in chunks]
-        top_indices = multi_ai_rag_service.cosine_similarity_search(
+        top_indices, similarity_scores = multi_ai_rag_service.cosine_similarity_search(
             question_embedding, 
             chunk_embeddings, 
-            top_k=5
+            top_k=5,
+            min_similarity=0.3  # Minimum 30% similarity required
         )
         
-        # Get top chunks
-        top_chunks = [
-            {
-                "content_id": chunks[i]["content_id"],
-                "title": chunks[i]["title"],
-                "text": chunks[i]["text"]
-            }
-            for i in top_indices
-        ]
+        # Check if we have relevant chunks
+        if not top_indices:
+            # No relevant chunks found - don't call AI
+            response_text = f"Desculpe, mas não encontrei informações relevantes sobre esse tópico na base de conhecimento do(a) Dr(a). {mentor['full_name']}. Por favor, faça uma pergunta sobre um assunto que esteja nos materiais compartilhados pelo mentor."
+            citations = []
+            ai_used = "none"
+            logger.info(f"No relevant chunks found (all below 0.3 similarity threshold)")
+        else:
+            # Get top chunks
+            top_chunks = [
+                {
+                    "content_id": chunks[i]["content_id"],
+                    "title": chunks[i]["title"],
+                    "text": chunks[i]["text"]
+                }
+                for i in top_indices
+            ]
+            
+            logger.info(f"Found {len(top_chunks)} relevant chunks with similarities: {[f'{s:.2f}' for s in similarity_scores]}")
         
         # Get mentor's AI agent profile
         mentor_profile = None
