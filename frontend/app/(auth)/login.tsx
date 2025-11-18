@@ -24,7 +24,8 @@ export default function LoginScreen() {
 
     try {
       await login(email, password);
-      // Não faz replace aqui, deixa o index.tsx redirecionar baseado no user_type
+      // Força redirecionamento para index que vai rotear baseado no user_type
+      router.replace('/');
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login');
     } finally {
