@@ -714,8 +714,8 @@ async def chat_with_mentor(
     }).to_list(1000)
     
     if not chunks:
-        # No content available for this mentor
-        response_text = f"I apologize, but Dr. {mentor['full_name']} hasn't uploaded any content yet. Please check back later or contact the mentor directly."
+        # No content available for this mentor - NEVER call AI
+        response_text = f"Desculpe, mas Dr(a). {mentor['full_name']} ainda não possui conteúdo disponível em sua base de conhecimento. Por favor, entre em contato com o mentor ou tente novamente mais tarde."
         citations = []
         ai_used = "none"
     else:
