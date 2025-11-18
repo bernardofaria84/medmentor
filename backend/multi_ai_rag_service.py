@@ -70,16 +70,25 @@ class MultiAIRAGService:
         self, 
         query_embedding: List[float], 
         document_embeddings: List[List[float]], 
-        top_k: int = 5
-    ) -> List[int]:
-        """Find top k most similar documents using cosine similarity"""
+        top_k: int = 5,
+        min_similarity: float = 0.3  # Minimum similarity threshold
+    ) -> Tuple[List[int], List[float]]:
+        """
+        Find top k most similar documents using cosine similarity
+        Returns: (indices, similarity_scores)
+        """
         query_vec = np.array(query_embedding).reshape(1, -1)
         doc_vecs = np.array(document_embeddings)
         
         similarities = cosine_similarity(query_vec, doc_vecs)[0]
         top_indices = np.argsort(similarities)[-top_k:][::-1]
+        top_scores = similarities[top_indices]
         
-        return top_indices.tolist()
+        # Filter by minimum similarity
+        valid_indices = [idx for idx, score in zip(top_indices, top_scores) if score >= min_similarity]
+        valid_scores = [score for score in top_scores if score >= min_similarity]
+        
+        return valid_indices, valid_scores
     
     async def generate_rag_response(
         self, 
