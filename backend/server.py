@@ -706,7 +706,14 @@ async def chat_with_mentor(
     await db.messages.insert_one(user_message_doc)
     
     # Generate embedding for the question
-    question_embedding = await multi_ai_rag_service.generate_embedding(chat_request.question)
+    try:
+        question_embedding = await multi_ai_rag_service.generate_embedding(chat_request.question)
+    except Exception as embedding_error:
+        logger.error(f"Embedding generation failed: {embedding_error}")
+        raise HTTPException(
+            status_code=503,
+            detail="Serviço de geração de embeddings temporariamente indisponível. Por favor, tente novamente em alguns instantes."
+        )
     
     # Search for relevant content chunks
     chunks = await db.content_chunks.find({
