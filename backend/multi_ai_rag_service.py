@@ -30,26 +30,8 @@ class MultiAIRAGService:
     """Enhanced RAG Service with multi-AI support and personalized agents"""
     
     def __init__(self):
-        # HYBRID SETUP: Use different keys for different purposes
-        
-        # 1. Emergent LLM Key for EMBEDDINGS (uses emergentintegrations)
-        emergent_key = os.getenv("EMERGENT_LLM_KEY")
-        try:
-            # Import emergentintegrations for Emergent LLM Key
-            from emergentintegrations.llm.chat import LlmChat
-            # We'll use litellm compatible client for embeddings
-            self.embedding_client = AsyncOpenAI(
-                api_key=emergent_key,
-                base_url="https://api.litellm.ai"  # Use litellm proxy
-            )
-        except:
-            # Fallback to direct OpenAI if emergent doesn't work
-            self.embedding_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-        
-        # 2. User's OpenAI Key for CHAT (gpt-4o-mini)
-        self.openai_chat_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-        
-        # 3. Anthropic for fallback
+        # SIMPLIFIED: Use user's OpenAI Key for EVERYTHING
+        self.openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
         self.anthropic_client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
         
         self.embedding_model = "text-embedding-ada-002"
