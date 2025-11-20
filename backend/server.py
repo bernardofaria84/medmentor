@@ -884,6 +884,70 @@ async def get_conversation_messages(
         for msg in messages
     ]
 
+
+@api_router.post("/conversations/{conversation_id}/summarize")
+async def summarize_conversation(
+    conversation_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Generate SOAP clinical summary from conversation"""
+    
+    # Verify conversation exists and belongs to user
+    conversation = await db.conversations.find_one({"_id": conversation_id})
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    if current_user["user_type"] == "user" and conversation["user_id"] != current_user["user_id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get all messages in conversation
+    messages = await db.messages.find(
+        {"conversation_id": conversation_id}
+    ).sort("sent_at", 1).to_list(1000)
+    
+    if len(messages) < 2:
+        raise HTTPException(
+            status_code=400, 
+            detail="Conversa muito curta para gerar resumo. São necessárias pelo menos 2 mensagens."
+        )
+    
+    # Get mentor info
+    mentor_id = conversation["mentor_id"]
+    mentor = await db.mentors.find_one({"_id": mentor_id})
+    if not mentor:
+        raise HTTPException(status_code=404, detail="Mentor not found")
+    
+    # Prepare messages for summarization
+    msg_list = [
+        {
+            "sender_type": msg["sender_type"],
+            "content": msg["content"]
+        }
+        for msg in messages
+    ]
+    
+    # Generate SOAP summary
+    try:
+        soap_summary = await multi_ai_rag_service.summarize_conversation_to_soap(
+            messages=msg_list,
+            mentor_name=mentor["full_name"]
+        )
+        
+        logger.info(f"SOAP summary generated for conversation {conversation_id}")
+        
+        return {
+            "conversation_id": conversation_id,
+            "soap_summary": soap_summary,
+            "generated_at": datetime.utcnow()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating SOAP summary: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao gerar resumo SOAP: {str(e)}"
+        )
+
 @api_router.post("/messages/{message_id}/feedback")
 async def update_message_feedback(
     message_id: str,
