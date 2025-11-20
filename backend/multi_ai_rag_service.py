@@ -37,7 +37,14 @@ class MultiAIRAGService:
         self.chunk_overlap = 50  # tokens
         
     async def generate_embedding(self, text: str) -> List[float]:
-        """Generate embedding using OpenAI (always available for embeddings)"""
+        """
+        Generate embedding using OpenAI with proper error handling
+        Tries text-embedding-3-large first, then falls back to text-embedding-ada-002
+        NEVER returns random vectors - raises exception on complete failure
+        """
+        from exceptions import EmbeddingGenerationError
+        
+        # Try primary model
         try:
             response = await self.openai_client.embeddings.create(
                 model=self.embedding_model,
@@ -46,10 +53,25 @@ class MultiAIRAGService:
             return response.data[0].embedding
             
         except Exception as e:
-            print(f"Error generating embedding: {e}")
-            # Return random vector as fallback
-            import random
-            return [random.random() for _ in range(3072)]
+            print(f"Error with {self.embedding_model}: {e}")
+            
+            # Try fallback model
+            try:
+                print(f"Attempting fallback to text-embedding-ada-002...")
+                response = await self.openai_client.embeddings.create(
+                    model="text-embedding-ada-002",
+                    input=text
+                )
+                print(f"✓ Fallback successful with text-embedding-ada-002")
+                return response.data[0].embedding
+                
+            except Exception as e2:
+                print(f"Fallback also failed: {e2}")
+                # CRITICAL: Never return random vectors - raise exception
+                raise EmbeddingGenerationError(
+                    f"Failed to generate embedding with both models. "
+                    f"Primary error: {str(e)}. Fallback error: {str(e2)}"
+                )
     
     def chunk_text(self, text: str) -> List[str]:
         """Split text into overlapping chunks"""
