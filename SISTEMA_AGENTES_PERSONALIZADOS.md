@@ -160,6 +160,8 @@ ANTHROPIC_API_KEY=your_anthropic_api_key_here
 ANTHROPIC_MODEL=claude-sonnet-4-20250514
 ```
 
+**Nota:** As API keys reais devem ser configuradas no arquivo `.env` do backend e **NUNCA** devem ser commitadas no Git.
+
 ---
 
 ## 📊 Database Schema Atualizado
