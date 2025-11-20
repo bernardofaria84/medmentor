@@ -258,6 +258,10 @@ PROVIDED KNOWLEDGE:
                 processed_count += 1
                 
             except Exception as e:
+                print(f"Error processing chunk {i}: {e}")
+                continue
+        
+        return processed_count
 
     async def summarize_conversation_to_soap(
         self, 
