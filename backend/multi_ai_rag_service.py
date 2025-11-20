@@ -203,8 +203,8 @@ PROVIDED KNOWLEDGE:
                 return "I apologize, but I'm currently unable to process your question due to technical issues. Please try again later.", "none"
     
     async def _generate_with_openai(self, system_message: str, user_message: str) -> str:
-        """Generate response using OpenAI"""
-        response = await self.openai_client.chat.completions.create(
+        """Generate response using user's OpenAI Key (gpt-4o-mini)"""
+        response = await self.openai_chat_client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[
                 {"role": "system", "content": system_message},
