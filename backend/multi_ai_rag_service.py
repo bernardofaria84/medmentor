@@ -40,55 +40,24 @@ class MultiAIRAGService:
         
     async def generate_embedding(self, text: str) -> List[float]:
         """
-        Generate embedding using emergentintegrations library
-        Uses text-embedding-ada-002 model with Emergent LLM Key
+        Generate embedding using OpenAI (user's key)
         NEVER returns random vectors - raises exception on complete failure
         """
         from exceptions import EmbeddingGenerationError
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
         
         try:
-            # Use emergentintegrations for Emergent LLM Key
-            emergent_key = os.getenv("EMERGENT_LLM_KEY")
-            
-            # Create a temporary OpenAI client using sync client and run in thread
-            import asyncio
-            from openai import OpenAI
-            
-            def get_embedding_sync():
-                # Use emergentintegrations compatible approach
-                from emergentintegrations.llm.chat import LlmChat
-                llm = LlmChat(api_key=emergent_key)
-                # emergentintegrations uses litellm under the hood
-                client = OpenAI(api_key=emergent_key, base_url="https://api.openai.com/v1")
-                response = client.embeddings.create(
-                    model=self.embedding_model,
-                    input=text
-                )
-                return response.data[0].embedding
-            
-            # Run sync function in executor
-            loop = asyncio.get_event_loop()
-            embedding = await loop.run_in_executor(None, get_embedding_sync)
-            return embedding
+            response = await self.openai_client.embeddings.create(
+                model=self.embedding_model,
+                input=text
+            )
+            return response.data[0].embedding
             
         except Exception as e:
             print(f"Embedding generation failed: {e}")
-            # Try fallback to user's OpenAI key
-            try:
-                print("Trying fallback to user's OpenAI key for embeddings...")
-                response = await self.openai_chat_client.embeddings.create(
-                    model=self.embedding_model,
-                    input=text
-                )
-                print("✓ Fallback successful using user's OpenAI key")
-                return response.data[0].embedding
-            except Exception as e2:
-                print(f"Fallback also failed: {e2}")
-                # CRITICAL: Never return random vectors - raise exception
-                raise EmbeddingGenerationError(
-                    f"Failed to generate embedding with both Emergent and OpenAI keys: {str(e)}, {str(e2)}"
-                )
+            # CRITICAL: Never return random vectors - raise exception
+            raise EmbeddingGenerationError(
+                f"Failed to generate embedding: {str(e)}"
+            )
     
     def chunk_text(self, text: str) -> List[str]:
         """Split text into overlapping chunks"""
