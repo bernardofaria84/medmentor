@@ -40,20 +40,28 @@ class MultiAIRAGService:
         
     async def generate_embedding(self, text: str) -> List[float]:
         """
-        Generate embedding using OpenAI (user's key)
+        Generate embedding using Emergent LLM Key (works like OpenAI key)
         NEVER returns random vectors - raises exception on complete failure
         """
         from exceptions import EmbeddingGenerationError
         
+        # Use Emergent LLM Key for embeddings
+        emergent_key = os.getenv("EMERGENT_LLM_KEY")
+        if not emergent_key:
+            raise EmbeddingGenerationError("EMERGENT_LLM_KEY not configured in environment")
+        
+        # Create client with Emergent key (compatible with OpenAI API)
+        emergent_client = AsyncOpenAI(api_key=emergent_key)
+        
         try:
-            response = await self.openai_client.embeddings.create(
+            response = await emergent_client.embeddings.create(
                 model=self.embedding_model,
                 input=text
             )
             return response.data[0].embedding
             
         except Exception as e:
-            print(f"Embedding generation failed: {e}")
+            print(f"Embedding generation failed with Emergent key: {e}")
             # CRITICAL: Never return random vectors - raise exception
             raise EmbeddingGenerationError(
                 f"Failed to generate embedding: {str(e)}"
