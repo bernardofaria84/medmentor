@@ -34,7 +34,7 @@ class MultiAIRAGService:
         self.openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
         self.anthropic_client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
         
-        self.embedding_model = "text-embedding-3-small"  # Using newer model with 1M TPM
+        self.embedding_model = "text-embedding-ada-002"  # Using model confirmed working in user's test
         self.chunk_size = 500  # tokens
         self.chunk_overlap = 50  # tokens
         
