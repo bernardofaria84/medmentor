@@ -11,15 +11,8 @@ import os
 import asyncio
 from datetime import datetime
 import tiktoken
-from openai import AsyncOpenAI as StandardAsyncOpenAI
+from openai import AsyncOpenAI
 from anthropic import AsyncAnthropic
-# Import emergentintegrations for Emergent LLM Key
-try:
-    from emergentintegrations import OpenAI as EmergentOpenAI
-    EMERGENT_AVAILABLE = True
-except ImportError:
-    EMERGENT_AVAILABLE = False
-    print("Warning: emergentintegrations not available, will use standard OpenAI")
 from dotenv import load_dotenv
 
 load_dotenv()
