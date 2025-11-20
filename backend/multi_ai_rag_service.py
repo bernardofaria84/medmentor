@@ -335,11 +335,6 @@ Por favor, crie o resumo SOAP baseado APENAS nas informações acima."""
             print(f"Error generating SOAP summary: {e}")
             return f"**Erro ao gerar resumo SOAP:** {str(e)}\n\nPor favor, tente novamente."
 
-                print(f"Error processing chunk {i}: {e}")
-                continue
-        
-        return processed_count
-
 
 # Singleton instance
 multi_ai_rag_service = MultiAIRAGService()
