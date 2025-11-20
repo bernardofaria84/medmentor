@@ -14,44 +14,32 @@ import { sendChatMessage, getConversationMessages, getConversations } from '../.
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
 import * as Clipboard from 'expo-clipboard';
-
-interface Message {
-  id: string;
-  sender_type: 'USER' | 'MENTOR_BOT';
-  content: string;
-  citations: any[];
-}
+import api from '../../services/api';
 
 export default function ConversationScreen() {
   const { conversationId } = useLocalSearchParams();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [mentorId, setMentorId] = useState('');
-  const [mentorName, setMentorName] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
+  
+  // SOAP Modal states
+  const [showSOAPModal, setShowSOAPModal] = useState(false);
+  const [soapSummary, setSOAPSummary] = useState('');
+  const [loadingSOAP, setLoadingSOAP] = useState(false);
 
   useEffect(() => {
-    loadConversation();
+    loadMessages();
   }, [conversationId]);
 
-  const loadConversation = async () => {
+  const loadMessages = async () => {
     try {
-      // Get conversation details
-      const conversations = await getConversations();
-      const conv = conversations.find((c: any) => c.id === conversationId);
-      
-      if (conv) {
-        setMentorId(conv.mentor_id);
-        setMentorName(conv.mentor_name);
-      }
-
-      // Get messages
+      setLoading(true);
       const messagesData = await getConversationMessages(conversationId as string);
       setMessages(messagesData);
     } catch (error) {
-      console.error('Error loading conversation:', error);
+      console.error('Error loading messages:', error);
     } finally {
       setLoading(false);
     }
@@ -60,240 +48,312 @@ export default function ConversationScreen() {
   const handleSend = async () => {
     if (!inputText.trim() || sending) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      sender_type: 'USER',
-      content: inputText.trim(),
-      citations: [],
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+    const question = inputText.trim();
     setInputText('');
-    setSending(true);
     Keyboard.dismiss();
 
     try {
-      const response = await sendChatMessage(
-        mentorId,
-        userMessage.content,
-        conversationId as string
+      setSending(true);
+      const conversations = await getConversations();
+      const currentConv = conversations.find(
+        (c: any) => c.id === conversationId
       );
 
-      const botMessage: Message = {
-        id: response.message_id,
-        sender_type: 'MENTOR_BOT',
-        content: response.response,
-        citations: response.citations || [],
-      };
+      if (!currentConv) {
+        throw new Error('Conversation not found');
+      }
 
-      setMessages(prev => [...prev, botMessage]);
+      await sendChatMessage(currentConv.mentor_id, question, conversationId as string);
+      await loadMessages();
     } catch (error: any) {
       console.error('Error sending message:', error);
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        sender_type: 'MENTOR_BOT',
-        content: 'Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.',
-        citations: [],
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      Alert.alert('Erro', error.message || 'Não foi possível enviar a mensagem');
     } finally {
       setSending(false);
     }
   };
 
-  useEffect(() => {
-    scrollViewRef.current?.scrollToEnd({ animated: true });
-  }, [messages]);
+  // Generate SOAP Summary
+  const generateSOAPSummary = async () => {
+    if (messages.length < 2) {
+      Alert.alert(
+        'Conversa muito curta',
+        'São necessárias pelo menos 2 mensagens para gerar um resumo SOAP.'
+      );
+      return;
+    }
+
+    setLoadingSOAP(true);
+    try {
+      const response = await api.post(`/api/conversations/${conversationId}/summarize`);
+      setSOAPSummary(response.data.soap_summary);
+      setShowSOAPModal(true);
+    } catch (error: any) {
+      console.error('Error generating SOAP:', error);
+      Alert.alert(
+        'Erro',
+        error.response?.data?.detail || 'Não foi possível gerar o resumo SOAP'
+      );
+    } finally {
+      setLoadingSOAP(false);
+    }
+  };
+
+  // Copy to clipboard
+  const copyToClipboard = async () => {
+    await Clipboard.setStringAsync(soapSummary);
+    Alert.alert('Copiado!', 'Resumo SOAP copiado para a área de transferência');
+  };
+
+  const renderMessage = (message: any) => {
+    const isUser = message.sender_type === 'USER';
+
+    return (
+      <View
+        key={message.id}
+        style={[
+          styles.messageContainer,
+          isUser ? styles.userMessage : styles.botMessage,
+        ]}
+      >
+        <Card
+          style={[
+            styles.messageCard,
+            isUser ? styles.userCard : styles.botCard,
+          ]}
+        >
+          <Card.Content>
+            <Markdown>{message.content}</Markdown>
+            {message.citations && message.citations.length > 0 && (
+              <View style={styles.citationsContainer}>
+                <Text style={styles.citationsTitle}>Fontes:</Text>
+                {message.citations.map((citation: any, index: number) => (
+                  <Chip
+                    key={index}
+                    style={styles.citationChip}
+                    textStyle={styles.citationText}
+                  >
+                    {citation.title}
+                  </Chip>
+                ))}
+              </View>
+            )}
+          </Card.Content>
+        </Card>
+      </View>
+    );
+  };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <ActivityIndicator size="large" />
       </View>
     );
   }
 
   return (
-    <>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen
         options={{
-          title: mentorName || 'Conversa',
-          headerShown: true,
-          headerStyle: { backgroundColor: '#2563eb' },
-          headerTintColor: '#ffffff',
-          headerBackTitle: 'Voltar',
+          title: 'Conversa',
+          headerRight: () => (
+            <IconButton
+              icon="briefcase-edit-outline"
+              onPress={generateSOAPSummary}
+              disabled={loadingSOAP}
+            />
+          ),
         }}
       />
-      <SafeAreaView style={styles.container} edges={['bottom']}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.messagesContainer}
+          onContentSizeChange={() =>
+            scrollViewRef.current?.scrollToEnd({ animated: true })
+          }
         >
-          <ScrollView
-            ref={scrollViewRef}
-            contentContainerStyle={styles.messagesContainer}
-            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-          >
-            {messages.map(message => (
-              <View
-                key={message.id}
-                style={[
-                  styles.messageContainer,
-                  message.sender_type === 'USER'
-                    ? styles.userMessageContainer
-                    : styles.botMessageContainer,
-                ]}
+          {messages.map(renderMessage)}
+          {sending && (
+            <View style={styles.loadingMessage}>
+              <ActivityIndicator size="small" />
+              <Text style={styles.loadingText}>Enviando...</Text>
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            value={inputText}
+            onChangeText={setInputText}
+            placeholder="Digite sua pergunta..."
+            multiline
+            onSubmitEditing={handleSend}
+            disabled={sending}
+            right={
+              <TextInput.Icon
+                icon="send"
+                onPress={handleSend}
+                disabled={sending || !inputText.trim()}
+              />
+            }
+          />
+        </View>
+      </KeyboardAvoidingView>
+
+      {/* SOAP Summary Modal */}
+      <Portal>
+        <Modal
+          visible={showSOAPModal}
+          onDismiss={() => setShowSOAPModal(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text variant="headlineSmall" style={styles.modalTitle}>
+                📋 Resumo SOAP
+              </Text>
+              <IconButton
+                icon="close"
+                size={24}
+                onPress={() => setShowSOAPModal(false)}
+              />
+            </View>
+
+            <ScrollView style={styles.soapContent}>
+              <Markdown>{soapSummary}</Markdown>
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <Button
+                mode="contained"
+                icon="content-copy"
+                onPress={copyToClipboard}
+                style={styles.copyButton}
               >
-                <Card
-                  style={[
-                    styles.messageCard,
-                    message.sender_type === 'USER' ? styles.userMessage : styles.botMessage,
-                  ]}
-                >
-                  <Card.Content>
-                    {message.sender_type === 'USER' ? (
-                      <Text style={styles.messageText}>{message.content}</Text>
-                    ) : (
-                      <Markdown style={markdownStyles}>{message.content}</Markdown>
-                    )}
-                    {message.citations && message.citations.length > 0 && (
-                      <View style={styles.citationsContainer}>
-                        <Text variant="labelSmall" style={styles.citationsLabel}>
-                          Fontes:
-                        </Text>
-                        {message.citations.map((citation, idx) => (
-                          <Chip key={idx} mode="outlined" style={styles.citationChip}>
-                            {citation.title}
-                          </Chip>
-                        ))}
-                      </View>
-                    )}
-                  </Card.Content>
-                </Card>
-              </View>
-            ))}
-
-            {sending && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#2563eb" />
-                <Text style={styles.loadingText}>Dr. {mentorName} está analisando...</Text>
-              </View>
-            )}
-          </ScrollView>
-
-          <View style={styles.inputContainer}>
-            <TextInput
-              mode="outlined"
-              placeholder="Digite sua pergunta..."
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              maxLength={1000}
-              style={styles.input}
-              disabled={sending}
-              right={
-                <TextInput.Icon
-                  icon="send"
-                  onPress={handleSend}
-                  disabled={!inputText.trim() || sending}
-                  color={inputText.trim() && !sending ? '#2563eb' : '#cbd5e1'}
-                />
-              }
-            />
+                Copiar para Prontuário
+              </Button>
+            </View>
           </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </>
+        </Modal>
+      </Portal>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f5f5f5',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    flexDirection: 'row',
-    padding: 16,
-  },
-  keyboardView: {
-    flex: 1,
   },
   messagesContainer: {
+    flex: 1,
     padding: 16,
-    flexGrow: 1,
   },
   messageContainer: {
     marginBottom: 12,
   },
-  userMessageContainer: {
+  userMessage: {
     alignItems: 'flex-end',
   },
-  botMessageContainer: {
+  botMessage: {
     alignItems: 'flex-start',
   },
   messageCard: {
-    maxWidth: '85%',
+    maxWidth: '80%',
   },
-  userMessage: {
-    backgroundColor: '#2563eb',
+  userCard: {
+    backgroundColor: '#2196F3',
   },
-  botMessage: {
+  botCard: {
     backgroundColor: '#ffffff',
-  },
-  messageText: {
-    color: '#ffffff',
   },
   citationsContainer: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    borderTopColor: '#e0e0e0',
   },
-  citationsLabel: {
+  citationsTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
     marginBottom: 8,
-    color: '#64748b',
+    color: '#666',
   },
   citationChip: {
     marginRight: 8,
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  loadingText: {
-    marginLeft: 12,
-    color: '#64748b',
+  citationText: {
+    fontSize: 10,
   },
   inputContainer: {
     padding: 16,
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    borderTopColor: '#e0e0e0',
   },
   input: {
-    backgroundColor: '#ffffff',
-    maxHeight: 120,
+    backgroundColor: '#f5f5f5',
+  },
+  loadingMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  loadingText: {
+    marginLeft: 8,
+    color: '#666',
+  },
+  // SOAP Modal styles
+  modalContainer: {
+    backgroundColor: 'white',
+    margin: 20,
+    borderRadius: 12,
+    maxHeight: '80%',
+    ...Platform.select({
+      web: {
+        maxWidth: 700,
+        alignSelf: 'center',
+        width: '100%',
+      },
+    }),
+  },
+  modalContent: {
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontWeight: 'bold',
+    color: '#1e293b',
+  },
+  soapContent: {
+    maxHeight: 400,
+    marginBottom: 16,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  copyButton: {
+    minWidth: 200,
   },
 });
-
-const markdownStyles = {
-  body: {
-    color: '#1e293b',
-  },
-  heading1: {
-    color: '#1e293b',
-    fontWeight: 'bold',
-  },
-  heading2: {
-    color: '#1e293b',
-    fontWeight: 'bold',
-  },
-  strong: {
-    fontWeight: 'bold',
-  },
-  link: {
-    color: '#2563eb',
-  },
-};
