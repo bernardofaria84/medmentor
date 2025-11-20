@@ -21,16 +21,10 @@ class MentorProfileService:
     """Service for generating and managing AI agent profiles for mentors"""
     
     def __init__(self):
-        # Use Emergent LLM Key for profile generation
-        emergent_key = os.getenv("EMERGENT_LLM_KEY")
-        if emergent_key:
-            self.openai_client = AsyncOpenAI(api_key=emergent_key)
-            print("✓ Using Emergent LLM Key for mentor profile service")
-        else:
-            self.openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-            print("Using OpenAI key for mentor profile service")
-        
+        # Use user's OpenAI key
+        self.openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
         self.anthropic_client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
+        print("✓ Mentor Profile Service initialized with user's OpenAI key")
         
     async def analyze_content_and_generate_profile(
         self, 
