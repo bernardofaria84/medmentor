@@ -258,6 +258,79 @@ PROVIDED KNOWLEDGE:
                 processed_count += 1
                 
             except Exception as e:
+
+    async def summarize_conversation_to_soap(
+        self, 
+        messages: List[Dict[str, str]], 
+        mentor_name: str
+    ) -> str:
+        """
+        Summarize a chat conversation into a structured SOAP clinical note
+        
+        Args:
+            messages: List of message dicts with 'sender_type' and 'content'
+            mentor_name: Name of the mentor for context
+            
+        Returns:
+            Formatted SOAP note in Portuguese
+        """
+        
+        # Build conversation text
+        conversation_text = ""
+        for msg in messages:
+            role = "Médico" if msg["sender_type"] == "USER" else f"Mentor {mentor_name}"
+            conversation_text += f"{role}: {msg['content']}\n\n"
+        
+        # SOAP generation prompt
+        system_prompt = """Você é um escrivão médico especialista. Sua tarefa é converter uma conversa entre um médico e um mentor de IA em uma nota clínica estruturada no formato SOAP.
+
+A saída DEVE estar em Português do Brasil e seguir RIGOROSAMENTE o formato abaixo. Não adicione informações extras ou comentários.
+
+**REGRAS CRÍTICAS:**
+1. Use APENAS informações EXPLICITAMENTE mencionadas na conversa
+2. Se uma seção não tiver informações suficientes, escreva "Não especificado na conversa"
+3. Mantenha a linguagem médica profissional
+4. Seja conciso mas completo
+5. NUNCA invente informações
+
+**FORMATO OBRIGATÓRIO:**
+
+**S (Subjetivo):**
+[Resuma as queixas do paciente e histórico relatados pelo médico]
+
+**O (Objetivo):**
+[Resuma dados objetivos, resultados de exames ou achados de exame físico mencionados]
+
+**A (Avaliação):**
+[Resuma a avaliação do mentor, diagnósticos diferenciais e considerações principais]
+
+**P (Plano):**
+[Resuma o plano sugerido pelo mentor, incluindo exames, tratamentos e encaminhamentos]"""
+
+        user_prompt = f"""Conversa para resumir:
+
+{conversation_text}
+
+Por favor, crie o resumo SOAP baseado APENAS nas informações acima."""
+
+        try:
+            # Use OpenAI for SOAP generation
+            response = await self.openai_client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.3,  # Lower temperature for more consistent formatting
+                max_tokens=1500
+            )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            print(f"Error generating SOAP summary: {e}")
+            return f"**Erro ao gerar resumo SOAP:** {str(e)}\n\nPor favor, tente novamente."
+
                 print(f"Error processing chunk {i}: {e}")
                 continue
         
