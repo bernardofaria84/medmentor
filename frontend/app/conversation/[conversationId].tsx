@@ -6,12 +6,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Alert,
 } from 'react-native';
-import { Text, TextInput, Card, Chip, ActivityIndicator } from 'react-native-paper';
+import { Text, TextInput, Card, Chip, ActivityIndicator, IconButton, Button, Portal, Modal } from 'react-native-paper';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { sendChatMessage, getConversationMessages, getConversations } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
+import * as Clipboard from 'expo-clipboard';
 
 interface Message {
   id: string;
