@@ -693,22 +693,33 @@ async def chat_with_mentor(
         }
         await db.conversations.insert_one(conversation_doc)
     
-    # Save user's message
+    # Anonymize user's question for LGPD/HIPAA compliance
+    anonymization_result = anonymization_service.anonymize_text(
+        chat_request.question, 
+        conversation_id=conversation_id
+    )
+    
+    logger.info(f"Anonymization applied: {len(anonymization_result.get('replacements', []))} PII entities removed")
+    
+    # Save user's message (ANONYMIZED for compliance)
     user_message_id = str(uuid.uuid4())
     user_message_doc = {
         "_id": user_message_id,
         "conversation_id": conversation_id,
         "sender_type": SenderType.USER,
-        "content": chat_request.question,
+        "content": anonymization_result["anonymized_text"],  # STORE ANONYMIZED VERSION
+        "original_content_hash": hash(chat_request.question),  # For integrity verification only
         "citations": [],
         "feedback": FeedbackType.NONE,
         "sent_at": datetime.utcnow()
     }
     await db.messages.insert_one(user_message_doc)
     
-    # Generate embedding for the question
+    # Generate embedding for the question (use ORIGINAL for better context)
     try:
-        question_embedding = await multi_ai_rag_service.generate_embedding(chat_request.question)
+        question_embedding = await multi_ai_rag_service.generate_embedding(
+            anonymization_result["original_text"]  # Use original for better AI understanding
+        )
     except Exception as embedding_error:
         logger.error(f"Embedding generation failed: {embedding_error}")
         raise HTTPException(
