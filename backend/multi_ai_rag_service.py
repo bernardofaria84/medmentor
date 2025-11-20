@@ -48,40 +48,26 @@ class MultiAIRAGService:
         
     async def generate_embedding(self, text: str) -> List[float]:
         """
-        Generate embedding using OpenAI with proper error handling
-        Tries text-embedding-3-large first, then falls back to text-embedding-ada-002
+        Generate embedding using Emergent LLM Key (reliable, free)
+        Uses text-embedding-ada-002 model
         NEVER returns random vectors - raises exception on complete failure
         """
         from exceptions import EmbeddingGenerationError
         
-        # Try primary model
         try:
-            response = await self.openai_client.embeddings.create(
+            # Use Emergent LLM Key client for embeddings
+            response = await self.embedding_client.embeddings.create(
                 model=self.embedding_model,
                 input=text
             )
             return response.data[0].embedding
             
         except Exception as e:
-            print(f"Error with {self.embedding_model}: {e}")
-            
-            # Try fallback model
-            try:
-                print(f"Attempting fallback to text-embedding-ada-002...")
-                response = await self.openai_client.embeddings.create(
-                    model="text-embedding-ada-002",
-                    input=text
-                )
-                print(f"✓ Fallback successful with text-embedding-ada-002")
-                return response.data[0].embedding
-                
-            except Exception as e2:
-                print(f"Fallback also failed: {e2}")
-                # CRITICAL: Never return random vectors - raise exception
-                raise EmbeddingGenerationError(
-                    f"Failed to generate embedding with both models. "
-                    f"Primary error: {str(e)}. Fallback error: {str(e2)}"
-                )
+            print(f"Embedding generation failed with Emergent LLM Key: {e}")
+            # CRITICAL: Never return random vectors - raise exception
+            raise EmbeddingGenerationError(
+                f"Failed to generate embedding: {str(e)}"
+            )
     
     def chunk_text(self, text: str) -> List[str]:
         """Split text into overlapping chunks"""
