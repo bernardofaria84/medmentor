@@ -30,25 +30,15 @@ class MultiAIRAGService:
     """Enhanced RAG Service with multi-AI support and personalized agents"""
     
     def __init__(self):
-        # Use Emergent LLM Key for embeddings, user's keys for chat
-        emergent_key = os.getenv("EMERGENT_LLM_KEY")
-        
-        if EMERGENT_AVAILABLE and emergent_key:
-            # Use emergentintegrations for embeddings with Emergent key
-            self.embedding_client = EmergentOpenAI(api_key=emergent_key)
-            print("✓ Using Emergent LLM Key for embeddings")
-        else:
-            # Fallback to user's OpenAI key
-            self.embedding_client = StandardAsyncOpenAI(api_key=OPENAI_API_KEY)
-            print("Using user's OpenAI key for embeddings")
-        
-        # User's keys for chat generation
-        self.openai_client = StandardAsyncOpenAI(api_key=OPENAI_API_KEY)
+        # Use user's OpenAI key for EVERYTHING (embeddings + chat)
+        self.openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
         self.anthropic_client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
         
         self.embedding_model = "text-embedding-ada-002"
         self.chunk_size = 500  # tokens
         self.chunk_overlap = 50  # tokens
+        
+        print(f"✓ Multi-AI RAG Service initialized with OpenAI key: {OPENAI_API_KEY[:15]}...")
         
     async def generate_embedding(self, text: str) -> List[float]:
         """
