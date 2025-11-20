@@ -194,7 +194,7 @@ PROVIDED KNOWLEDGE:
     
     async def _generate_with_openai(self, system_message: str, user_message: str) -> str:
         """Generate response using user's OpenAI Key (gpt-4o-mini)"""
-        response = await self.openai_chat_client.chat.completions.create(
+        response = await self.openai_client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[
                 {"role": "system", "content": system_message},
