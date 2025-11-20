@@ -42,14 +42,13 @@ class MultiAIRAGService:
         
     async def generate_embedding(self, text: str) -> List[float]:
         """
-        Generate embedding using Emergent LLM Key via emergentintegrations
+        Generate embedding using user's OpenAI key (text-embedding-ada-002)
         NEVER returns random vectors - raises exception on complete failure
         """
         from exceptions import EmbeddingGenerationError
         
         try:
-            # Use the embedding client (emergentintegrations or fallback)
-            response = await self.embedding_client.embeddings.create(
+            response = await self.openai_client.embeddings.create(
                 model=self.embedding_model,
                 input=text
             )
@@ -59,7 +58,8 @@ class MultiAIRAGService:
             print(f"Embedding generation failed: {e}")
             # CRITICAL: Never return random vectors - raise exception
             raise EmbeddingGenerationError(
-                f"Failed to generate embedding: {str(e)}"
+                f"Failed to generate embedding with OpenAI: {str(e)}. "
+                f"Please ensure embeddings are enabled on your OpenAI account."
             )
     
     def chunk_text(self, text: str) -> List[str]:
