@@ -30,14 +30,18 @@ class MultiAIRAGService:
     """Enhanced RAG Service with multi-AI support and personalized agents"""
     
     def __init__(self):
-        # Use Emergent LLM key for embeddings (more reliable)
-        emergent_key = os.getenv("EMERGENT_LLM_KEY")
-        if emergent_key:
-            self.openai_client = AsyncOpenAI(api_key=emergent_key)
-        else:
-            self.openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+        # HYBRID SETUP: Use different keys for different purposes
         
+        # 1. Emergent LLM Key for EMBEDDINGS (free, reliable)
+        emergent_key = os.getenv("EMERGENT_LLM_KEY")
+        self.embedding_client = AsyncOpenAI(api_key=emergent_key)
+        
+        # 2. User's OpenAI Key for CHAT (gpt-4o-mini)
+        self.openai_chat_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+        
+        # 3. Anthropic for fallback
         self.anthropic_client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
+        
         self.embedding_model = "text-embedding-ada-002"
         self.chunk_size = 500  # tokens
         self.chunk_overlap = 50  # tokens
