@@ -21,12 +21,19 @@ export default function MentorProfile() {
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [snackbar, setSnackbar] = useState({ visible: false, message: '', type: 'info' });
   const router = useRouter();
   const { logout } = useAuth();
 
   useEffect(() => {
     loadProfile();
   }, []);
+
+  const showSnackbar = (message: string, type: string = 'info') => {
+    setSnackbar({ visible: true, message, type });
+  };
 
   const loadProfile = async () => {
     try {
@@ -37,7 +44,7 @@ export default function MentorProfile() {
       setBio(response.data.bio || '');
     } catch (error) {
       console.error('Error loading profile:', error);
-      Alert.alert('Erro', 'Erro ao carregar perfil');
+      showSnackbar('Erro ao carregar perfil', 'error');
     } finally {
       setLoading(false);
     }
@@ -45,7 +52,7 @@ export default function MentorProfile() {
 
   const handleSave = async () => {
     if (!fullName || !specialty) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios');
+      showSnackbar('Por favor, preencha todos os campos obrigatórios', 'error');
       return;
     }
 
@@ -58,32 +65,31 @@ export default function MentorProfile() {
         bio: bio || undefined,
       });
 
-      Alert.alert('Sucesso!', 'Perfil atualizado com sucesso');
+      showSnackbar('Perfil atualizado com sucesso!', 'success');
       loadProfile();
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      Alert.alert('Erro', error.response?.data?.detail || 'Erro ao atualizar perfil');
+      showSnackbar(error.response?.data?.detail || 'Erro ao atualizar perfil', 'error');
     } finally {
       setSaving(false);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sair',
-      'Tem certeza que deseja sair?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            router.replace('/(mentor)/login');
-          },
-        },
-      ]
-    );
+    setShowLogoutDialog(true);
+  };
+
+  const confirmLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+      setShowLogoutDialog(false);
+      router.replace('/(mentor)/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   if (loading || !profile) {
