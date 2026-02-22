@@ -38,28 +38,45 @@ export default function ProfileScreen() {
 
   const handleLogout = async () => {
     console.log('Logout button pressed');
-    Alert.alert(
-      'Sair',
-      'Tem certeza que deseja sair?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sair',
-          style: 'destructive',
-          onPress: async () => {
-            console.log('User confirmed logout');
-            try {
-              await logout();
-              console.log('Logout completed, redirecting to login');
-              router.replace('/(auth)/login');
-            } catch (error) {
-              console.error('Logout error:', error);
-              Alert.alert('Erro', 'Não foi possível fazer logout');
-            }
+    
+    // Use native confirm for web, Alert for native
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Tem certeza que deseja sair?');
+      if (confirmed) {
+        console.log('User confirmed logout (web)');
+        try {
+          await logout();
+          console.log('Logout completed, redirecting to login');
+          router.replace('/(auth)/login');
+        } catch (error) {
+          console.error('Logout error:', error);
+          window.alert('Não foi possível fazer logout');
+        }
+      }
+    } else {
+      Alert.alert(
+        'Sair',
+        'Tem certeza que deseja sair?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Sair',
+            style: 'destructive',
+            onPress: async () => {
+              console.log('User confirmed logout (native)');
+              try {
+                await logout();
+                console.log('Logout completed, redirecting to login');
+                router.replace('/(auth)/login');
+              } catch (error) {
+                console.error('Logout error:', error);
+                Alert.alert('Erro', 'Não foi possível fazer logout');
+              }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   if (loading || !profile) {
