@@ -221,4 +221,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     color: '#94a3b8',
   },
+  dialogTitle: {
+    textAlign: 'center',
+  },
 });
