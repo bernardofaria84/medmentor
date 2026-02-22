@@ -6,12 +6,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  TouchableOpacity,
 } from 'react-native';
 import { Text, TextInput, IconButton, Card, Chip, ActivityIndicator } from 'react-native-paper';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { sendChatMessage, getMentors } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
+import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 
 interface Message {
   id: string;
