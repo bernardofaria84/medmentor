@@ -3,6 +3,7 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 're
 import { TextInput, Button, Text, Surface } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAppTheme } from '../../contexts/ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
@@ -11,6 +12,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const { colors } = useAppTheme();
   const router = useRouter();
 
   const handleLogin = async () => {
@@ -24,7 +26,6 @@ export default function LoginScreen() {
 
     try {
       const result = await login(email, password);
-      // Redireciona diretamente para a rota correta baseado no user_type
       if (result.user_type === 'mentor') {
         router.replace('/(mentor)/dashboard');
       } else {
@@ -38,7 +39,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
@@ -48,14 +49,14 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.content}>
-            <Text variant="displaySmall" style={styles.title}>
+            <Text variant="displaySmall" style={[styles.title, { color: colors.primary }]}>
               MedMentor
             </Text>
-            <Text variant="bodyLarge" style={styles.subtitle}>
-              Mentoria Médica com IA
+            <Text variant="bodyLarge" style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Mentoria Medica com IA
             </Text>
 
-            <Surface style={styles.card} elevation={1}>
+            <Surface style={[styles.card, { backgroundColor: colors.card }]} elevation={1}>
               <TextInput
                 label="Email"
                 value={email}
@@ -65,6 +66,7 @@ export default function LoginScreen() {
                 autoCapitalize="none"
                 style={styles.input}
                 disabled={loading}
+                data-testid="login-email-input"
               />
 
               <TextInput
@@ -75,10 +77,11 @@ export default function LoginScreen() {
                 secureTextEntry
                 style={styles.input}
                 disabled={loading}
+                data-testid="login-password-input"
               />
 
               {error ? (
-                <Text style={styles.errorText}>{error}</Text>
+                <Text style={styles.errorText} data-testid="login-error">{error}</Text>
               ) : null}
 
               <Button
@@ -87,6 +90,7 @@ export default function LoginScreen() {
                 loading={loading}
                 disabled={loading}
                 style={styles.button}
+                data-testid="login-submit-btn"
               >
                 Entrar
               </Button>
@@ -97,9 +101,9 @@ export default function LoginScreen() {
                 disabled={loading}
                 style={styles.linkButton}
               >
-                Não tem conta? Cadastre-se
+                Nao tem conta? Cadastre-se
               </Button>
-              
+
               <Button
                 mode="text"
                 onPress={() => router.push('/(mentor)/login')}
@@ -110,7 +114,7 @@ export default function LoginScreen() {
               </Button>
             </Surface>
 
-            <Text variant="bodySmall" style={styles.testCredentials}>
+            <Text variant="bodySmall" style={[styles.testCredentials, { color: colors.textTertiary }]}>
               Teste: doctor@example.com / password123
             </Text>
           </View>
@@ -123,7 +127,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f8fafc',
   },
   container: {
     flex: 1,
@@ -142,17 +145,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
     fontWeight: 'bold',
-    color: '#2563eb',
   },
   subtitle: {
     textAlign: 'center',
     marginBottom: 32,
-    color: '#64748b',
   },
   card: {
     padding: 24,
     borderRadius: 16,
-    backgroundColor: '#ffffff',
   },
   input: {
     marginBottom: 16,
@@ -172,6 +172,5 @@ const styles = StyleSheet.create({
   testCredentials: {
     textAlign: 'center',
     marginTop: 24,
-    color: '#94a3b8',
   },
 });
