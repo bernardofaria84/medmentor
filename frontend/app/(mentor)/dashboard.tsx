@@ -106,6 +106,21 @@ export default function MentorDashboard() {
 
   const totalFeedback = (data?.likes || 0) + (data?.dislikes || 0);
 
+  // Show onboarding for new mentors
+  if (showOnboarding) {
+    return (
+      <View style={styles.container}>
+        <Appbar.Header style={styles.appbar}>
+          <Appbar.Content title="Bem-vindo!" titleStyle={styles.appbarTitle} />
+        </Appbar.Header>
+        <MentorOnboarding
+          mentorName={user?.full_name || 'Dr(a)'}
+          onDismiss={() => setShowOnboarding(false)}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Top Navigation Bar */}
