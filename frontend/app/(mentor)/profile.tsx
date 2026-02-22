@@ -428,4 +428,71 @@ const styles = StyleSheet.create({
   dialogTitle: {
     textAlign: 'center',
   },
+  // Bot Status Card styles
+  botStatusCard: {
+    marginBottom: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  botStatusActive: {
+    borderColor: '#22c55e',
+    backgroundColor: '#f0fdf4',
+  },
+  botStatusInactive: {
+    borderColor: '#f59e0b',
+    backgroundColor: '#fffbeb',
+  },
+  botStatusPending: {
+    borderColor: '#3b82f6',
+    backgroundColor: '#eff6ff',
+  },
+  botStatusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  botStatusIcon: {
+    fontSize: 22,
+    marginRight: 8,
+  },
+  botStatusTitle: {
+    color: '#166534',
+    fontWeight: '700',
+  },
+  botStatusTitleWarn: {
+    color: '#92400e',
+    fontWeight: '700',
+  },
+  botStatusTitlePending: {
+    color: '#1e40af',
+    fontWeight: '700',
+  },
+  botStatusText: {
+    color: '#374151',
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  pendingProfileBox: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+  },
+  pendingProfileLabel: {
+    color: '#1e40af',
+    marginBottom: 8,
+  },
+  pendingProfileText: {
+    color: '#374151',
+    lineHeight: 18,
+  },
+  approveButton: {
+    backgroundColor: '#22c55e',
+    marginTop: 4,
+  },
+  uploadButton: {
+    marginTop: 4,
+  },
 });
