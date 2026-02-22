@@ -830,6 +830,19 @@ async def chat_with_mentor(
             
             logger.info(f"Chat response generated using {ai_used}")
     
+    # ===== POST-GENERATION VALIDATION =====
+    try:
+        validate_rag_response(response_text, citations)
+        logger.info("✅ Response validation passed")
+    except ResponseValidationError as rve:
+        logger.error(f"❌ RESPONSE VALIDATION FAILED: {rve}")
+        logger.error(f"   Question: {chat_request.question}")
+        logger.error(f"   Invalid response: {rve.response_text[:200]}...")
+        logger.error(f"   Citations: {rve.citations}")
+        # Return safe fallback message
+        response_text = "Desculpe, ocorreu um erro ao processar a resposta. Por favor, tente refazer sua pergunta ou contate o suporte."
+        citations = []
+    
     # Clean up [source_N] citation tags from visible response text
     # (Citations are already extracted as structured data in the 'citations' list)
     import re as re_mod
