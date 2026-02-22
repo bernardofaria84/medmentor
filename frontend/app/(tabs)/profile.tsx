@@ -19,6 +19,8 @@ export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -36,46 +38,23 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleLogout = async () => {
-    console.log('Logout button pressed');
-    
-    // Use native confirm for web, Alert for native
-    if (Platform.OS === 'web') {
-      const confirmed = window.confirm('Tem certeza que deseja sair?');
-      if (confirmed) {
-        console.log('User confirmed logout (web)');
-        try {
-          await logout();
-          console.log('Logout completed, redirecting to login');
-          router.replace('/(auth)/login');
-        } catch (error) {
-          console.error('Logout error:', error);
-          window.alert('Não foi possível fazer logout');
-        }
-      }
-    } else {
-      Alert.alert(
-        'Sair',
-        'Tem certeza que deseja sair?',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Sair',
-            style: 'destructive',
-            onPress: async () => {
-              console.log('User confirmed logout (native)');
-              try {
-                await logout();
-                console.log('Logout completed, redirecting to login');
-                router.replace('/(auth)/login');
-              } catch (error) {
-                console.error('Logout error:', error);
-                Alert.alert('Erro', 'Não foi possível fazer logout');
-              }
-            },
-          },
-        ]
-      );
+  const handleLogout = () => {
+    console.log('Logout button pressed - showing dialog');
+    setShowLogoutDialog(true);
+  };
+
+  const confirmLogout = async () => {
+    console.log('User confirmed logout');
+    setLoggingOut(true);
+    try {
+      await logout();
+      setShowLogoutDialog(false);
+      console.log('Logout completed, redirecting to login');
+      router.replace('/(auth)/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setLoggingOut(false);
     }
   };
 
