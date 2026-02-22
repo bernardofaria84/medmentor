@@ -791,6 +791,13 @@ async def chat_with_mentor(
             
             logger.info(f"Chat response generated using {ai_used}")
     
+    # Clean up [source_N] citation tags from visible response text
+    # (Citations are already extracted as structured data in the 'citations' list)
+    import re as re_mod
+    response_text = re_mod.sub(r'\[source_\d+\]', '', response_text)
+    response_text = re_mod.sub(r'\s{2,}', ' ', response_text)  # Clean double spaces
+    response_text = response_text.strip()
+    
     # Save bot's response
     bot_message_id = str(uuid.uuid4())
     bot_message_doc = {
