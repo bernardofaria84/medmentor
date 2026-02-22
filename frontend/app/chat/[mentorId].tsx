@@ -14,6 +14,8 @@ import { sendChatMessage, getMentors } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
+import { useAppTheme } from '../../contexts/ThemeContext';
+import EmptyState from '../../components/EmptyState';
 
 interface Message {
   id: string;
@@ -31,16 +33,16 @@ export default function ChatScreen() {
   const [mentorName, setMentorName] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
   const router = useRouter();
-  
-  // Audio recording
-  const { 
-    isRecording, 
-    isTranscribing, 
-    recordingDuration, 
-    startRecording, 
-    stopRecording, 
+  const { colors } = useAppTheme();
+
+  const {
+    isRecording,
+    isTranscribing,
+    recordingDuration,
+    startRecording,
+    stopRecording,
     cancelRecording,
-    error: audioError 
+    error: audioError
   } = useAudioRecorder();
 
   const formatDuration = (seconds: number) => {
@@ -134,12 +136,12 @@ export default function ChatScreen() {
         options={{
           title: mentorName || 'Chat',
           headerShown: true,
-          headerStyle: { backgroundColor: '#2563eb' },
-          headerTintColor: '#ffffff',
+          headerStyle: { backgroundColor: colors.headerBg },
+          headerTintColor: colors.headerText,
           headerBackTitle: 'Voltar',
         }}
       />
-      <SafeAreaView style={styles.container} edges={['bottom']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardView}
@@ -151,14 +153,11 @@ export default function ChatScreen() {
             onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           >
             {messages.length === 0 && (
-              <View style={styles.emptyState}>
-                <Text variant="titleMedium" style={styles.emptyTitle}>
-                  Faça sua primeira pergunta
-                </Text>
-                <Text variant="bodyMedium" style={styles.emptyText}>
-                  O Dr. {mentorName} está pronto para ajudá-lo com base em seu conhecimento especializado.
-                </Text>
-              </View>
+              <EmptyState
+                icon="message-text-outline"
+                title="Faca sua primeira pergunta"
+                description={`O Dr. ${mentorName} esta pronto para ajuda-lo com base em seu conhecimento especializado.`}
+              />
             )}
 
             {messages.map(message => (
@@ -174,22 +173,25 @@ export default function ChatScreen() {
                 <Card
                   style={[
                     styles.messageCard,
-                    message.sender_type === 'USER' ? styles.userMessage : styles.botMessage,
+                    message.sender_type === 'USER'
+                      ? { backgroundColor: colors.primary }
+                      : { backgroundColor: colors.card },
                   ]}
                 >
                   <Card.Content>
                     {message.sender_type === 'USER' ? (
                       <Text style={styles.messageText}>{message.content}</Text>
                     ) : (
-                      <Markdown style={markdownStyles}>{message.content}</Markdown>
+                      <Markdown style={{ body: { color: colors.text } }}>{message.content}</Markdown>
                     )}
                     {message.citations && message.citations.length > 0 && (
-                      <View style={styles.citationsContainer}>
-                        <Text variant="labelSmall" style={styles.citationsLabel}>
+                      <View style={[styles.citationsContainer, { borderTopColor: colors.border }]}>
+                        <Text variant="labelSmall" style={{ marginBottom: 8, color: colors.textTertiary }}>
                           Fontes:
                         </Text>
                         {message.citations.map((citation, idx) => (
-                          <Chip key={idx} mode="outlined" style={styles.citationChip}>
+                          <Chip key={idx} mode="outlined" style={[styles.citationChip, { borderColor: colors.border }]}
+                            textStyle={{ color: colors.textSecondary }}>
                             {citation.title}
                           </Chip>
                         ))}
@@ -202,14 +204,15 @@ export default function ChatScreen() {
 
             {loading && (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#2563eb" />
-                <Text style={styles.loadingText}>Dr. {mentorName} está analisando...</Text>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+                  Dr. {mentorName} esta analisando...
+                </Text>
               </View>
             )}
           </ScrollView>
 
-          <View style={styles.inputContainer}>
-            {/* Recording indicator */}
+          <View style={[styles.inputContainer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
             {isRecording && (
               <View style={styles.recordingBar}>
                 <View style={styles.recordingDot} />
@@ -221,16 +224,14 @@ export default function ChatScreen() {
                 </TouchableOpacity>
               </View>
             )}
-            
-            {/* Transcribing indicator */}
+
             {isTranscribing && (
-              <View style={styles.transcribingBar}>
-                <ActivityIndicator size="small" color="#2563eb" />
-                <Text style={styles.transcribingText}>Transcrevendo áudio...</Text>
+              <View style={[styles.transcribingBar, { backgroundColor: colors.primaryLight }]}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={[styles.transcribingText, { color: colors.primary }]}>Transcrevendo audio...</Text>
               </View>
             )}
 
-            {/* Audio error */}
             {audioError && !isRecording && !isTranscribing && (
               <View style={styles.audioErrorBar}>
                 <Text style={styles.audioErrorText}>{audioError}</Text>
@@ -240,11 +241,12 @@ export default function ChatScreen() {
             <View style={styles.inputRow}>
               <IconButton
                 icon={isRecording ? "stop-circle" : "microphone"}
-                iconColor={isRecording ? "#ef4444" : "#2563eb"}
+                iconColor={isRecording ? colors.error : colors.primary}
                 size={24}
                 onPress={handleMicPress}
                 disabled={loading || isTranscribing}
                 style={[styles.micButton, isRecording && styles.micButtonRecording]}
+                data-testid="chat-mic-btn"
               />
               <TextInput
                 mode="outlined"
@@ -253,16 +255,18 @@ export default function ChatScreen() {
                 onChangeText={setInputText}
                 multiline
                 maxLength={1000}
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.card }]}
                 disabled={loading || isRecording}
+                textColor={colors.text}
                 right={
                   <TextInput.Icon
                     icon="send"
                     onPress={handleSend}
                     disabled={!inputText.trim() || loading}
-                    color={inputText.trim() && !loading ? '#2563eb' : '#cbd5e1'}
+                    color={inputText.trim() && !loading ? colors.primary : colors.textTertiary}
                   />
                 }
+                data-testid="chat-input"
               />
             </View>
           </View>
@@ -275,7 +279,6 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
   },
   keyboardView: {
     flex: 1,
@@ -283,22 +286,6 @@ const styles = StyleSheet.create({
   messagesContainer: {
     padding: 16,
     flexGrow: 1,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyTitle: {
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptyText: {
-    color: '#64748b',
-    textAlign: 'center',
   },
   messageContainer: {
     marginBottom: 12,
@@ -312,12 +299,6 @@ const styles = StyleSheet.create({
   messageCard: {
     maxWidth: '85%',
   },
-  userMessage: {
-    backgroundColor: '#2563eb',
-  },
-  botMessage: {
-    backgroundColor: '#ffffff',
-  },
   messageText: {
     color: '#ffffff',
   },
@@ -325,11 +306,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-  },
-  citationsLabel: {
-    marginBottom: 8,
-    color: '#64748b',
   },
   citationChip: {
     marginRight: 8,
@@ -343,13 +319,10 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginLeft: 12,
-    color: '#64748b',
   },
   inputContainer: {
     padding: 12,
-    backgroundColor: '#ffffff',
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
   },
   inputRow: {
     flexDirection: 'row',
@@ -364,7 +337,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef2f2',
   },
   input: {
-    backgroundColor: '#ffffff',
     maxHeight: 120,
     flex: 1,
   },
@@ -403,14 +375,12 @@ const styles = StyleSheet.create({
   transcribingBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#eff6ff',
     padding: 10,
     borderRadius: 8,
     marginBottom: 8,
   },
   transcribingText: {
     marginLeft: 10,
-    color: '#2563eb',
     fontWeight: '500',
     fontSize: 14,
   },
@@ -425,23 +395,3 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 });
-
-const markdownStyles = {
-  body: {
-    color: '#1e293b',
-  },
-  heading1: {
-    color: '#1e293b',
-    fontWeight: 'bold',
-  },
-  heading2: {
-    color: '#1e293b',
-    fontWeight: 'bold',
-  },
-  strong: {
-    fontWeight: 'bold',
-  },
-  link: {
-    color: '#2563eb',
-  },
-};
