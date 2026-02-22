@@ -243,3 +243,82 @@ async def get_content_analytics(db, mentor_id: str) -> Dict:
         "top_content": [{"title": title, "usage_count": count} for title, count in top_content],
         "total_chunks": len(all_chunks)
     }
+
+async def get_feedback_details_analytics(db, mentor_id: str) -> Dict:
+    """
+    Get detailed feedback analytics from the feedback_logs collection.
+    Provides: top disliked responses, dislike topics, AI correlation.
+    """
+    
+    # Get all feedback logs for this mentor
+    feedback_logs = await db.feedback_logs.find(
+        {"mentor_id": mentor_id}
+    ).sort("feedback_at", -1).to_list(1000)
+    
+    if not feedback_logs:
+        return {
+            "total_feedback_logs": 0,
+            "like_count": 0,
+            "dislike_count": 0,
+            "top_disliked_responses": [],
+            "dislike_topics": [],
+            "ai_correlation": {},
+            "recent_feedback": []
+        }
+    
+    # Count by type
+    likes = [f for f in feedback_logs if f["feedback_type"] == "LIKE"]
+    dislikes = [f for f in feedback_logs if f["feedback_type"] == "DISLIKE"]
+    
+    # Top 10 disliked responses
+    top_disliked = []
+    for fl in dislikes[:10]:
+        top_disliked.append({
+            "question": fl.get("question", "")[:150],
+            "response_preview": fl.get("response_text", "")[:200],
+            "feedback_at": fl["feedback_at"].isoformat() if fl.get("feedback_at") else "",
+            "ai_used": fl.get("ai_used", "unknown")
+        })
+    
+    # Extract topics/keywords from disliked questions
+    dislike_words = []
+    stop_words = {"de", "da", "do", "a", "o", "e", "em", "para", "que", "um", "uma", "os", "as", "no", "na", "é", "são", "por", "com", "se", "ao", "dos", "das", "como", "qual", "quais", "sobre", "entre", "mais", "pode", "sua", "seu", "meu", "minha"}
+    for fl in dislikes:
+        question = fl.get("question", "")
+        words = re.findall(r'\b[a-záàâãéèêíïóôõöúçñ]{4,}\b', question.lower())
+        dislike_words.extend([w for w in words if w not in stop_words])
+    
+    word_counts = Counter(dislike_words)
+    dislike_topics = [{"topic": word, "count": count} for word, count in word_counts.most_common(15)]
+    
+    # AI correlation: which AI gets more dislikes?
+    ai_stats = {}
+    for fl in feedback_logs:
+        ai = fl.get("ai_used", "unknown")
+        if ai not in ai_stats:
+            ai_stats[ai] = {"likes": 0, "dislikes": 0}
+        if fl["feedback_type"] == "LIKE":
+            ai_stats[ai]["likes"] += 1
+        elif fl["feedback_type"] == "DISLIKE":
+            ai_stats[ai]["dislikes"] += 1
+    
+    # Recent feedback (last 20)
+    recent_feedback = []
+    for fl in feedback_logs[:20]:
+        recent_feedback.append({
+            "feedback_type": fl["feedback_type"],
+            "question": fl.get("question", "")[:100],
+            "response_preview": fl.get("response_text", "")[:100],
+            "feedback_at": fl["feedback_at"].isoformat() if fl.get("feedback_at") else "",
+            "ai_used": fl.get("ai_used", "unknown")
+        })
+    
+    return {
+        "total_feedback_logs": len(feedback_logs),
+        "like_count": len(likes),
+        "dislike_count": len(dislikes),
+        "top_disliked_responses": top_disliked,
+        "dislike_topics": dislike_topics,
+        "ai_correlation": ai_stats,
+        "recent_feedback": recent_feedback
+    }
