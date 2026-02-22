@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Text, Card, TextInput, Button, ActivityIndicator, Avatar } from 'react-native-paper';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text, Card, TextInput, Button, ActivityIndicator, Avatar, Portal, Dialog, Snackbar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
