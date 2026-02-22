@@ -219,22 +219,60 @@ export default function ConversationScreen() {
         </ScrollView>
 
         <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="Digite sua pergunta..."
-            multiline
-            onSubmitEditing={handleSend}
-            disabled={sending}
-            right={
-              <TextInput.Icon
-                icon="send"
-                onPress={handleSend}
-                disabled={sending || !inputText.trim()}
-              />
-            }
-          />
+          {/* Recording indicator */}
+          {isRecording && (
+            <View style={styles.recordingBar}>
+              <View style={styles.recordingDot} />
+              <Text style={styles.recordingText}>
+                Gravando... {formatDuration(recordingDuration)}
+              </Text>
+              <TouchableOpacity onPress={cancelRecording} style={styles.cancelRecordBtn}>
+                <Text style={styles.cancelRecordText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          
+          {/* Transcribing indicator */}
+          {isTranscribing && (
+            <View style={styles.transcribingBar}>
+              <ActivityIndicator size="small" color="#2563eb" />
+              <Text style={styles.transcribingText}>Transcrevendo áudio...</Text>
+            </View>
+          )}
+
+          {/* Audio error */}
+          {audioError && !isRecording && !isTranscribing && (
+            <View style={styles.audioErrorBar}>
+              <Text style={styles.audioErrorText}>{audioError}</Text>
+            </View>
+          )}
+
+          <View style={styles.inputRow}>
+            <IconButton
+              icon={isRecording ? "stop-circle" : "microphone"}
+              iconColor={isRecording ? "#ef4444" : "#2563eb"}
+              size={24}
+              onPress={handleMicPress}
+              disabled={sending || isTranscribing}
+              style={[styles.micButton, isRecording && styles.micButtonRecording]}
+            />
+            <TextInput
+              style={styles.input}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Digite ou grave sua pergunta..."
+              multiline
+              onSubmitEditing={handleSend}
+              disabled={sending || isRecording}
+              right={
+                <TextInput.Icon
+                  icon="send"
+                  onPress={handleSend}
+                  disabled={sending || !inputText.trim()}
+                />
+              }
+            />
+          </View>
         </View>
       </KeyboardAvoidingView>
 
