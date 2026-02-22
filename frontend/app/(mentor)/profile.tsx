@@ -201,6 +201,43 @@ export default function MentorProfile() {
           </Card.Content>
         </Card>
       </ScrollView>
+
+      {/* Logout Confirmation Dialog */}
+      <Portal>
+        <Dialog visible={showLogoutDialog} onDismiss={() => setShowLogoutDialog(false)}>
+          <Dialog.Icon icon="logout" />
+          <Dialog.Title style={styles.dialogTitle}>Sair da Conta</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">Tem certeza que deseja sair? Você precisará fazer login novamente para acessar sua conta.</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowLogoutDialog(false)} disabled={loggingOut}>
+              Cancelar
+            </Button>
+            <Button 
+              onPress={confirmLogout} 
+              textColor="#ef4444"
+              loading={loggingOut}
+              disabled={loggingOut}
+            >
+              Sair
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* Snackbar for feedback messages */}
+      <Snackbar
+        visible={snackbar.visible}
+        onDismiss={() => setSnackbar({ ...snackbar, visible: false })}
+        duration={3000}
+        action={{
+          label: 'OK',
+          onPress: () => setSnackbar({ ...snackbar, visible: false }),
+        }}
+      >
+        {snackbar.message}
+      </Snackbar>
     </View>
   );
 }
