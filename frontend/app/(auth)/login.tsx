@@ -23,9 +23,13 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      await login(email, password);
-      // Força redirecionamento para index que vai rotear baseado no user_type
-      router.replace('/');
+      const result = await login(email, password);
+      // Redireciona diretamente para a rota correta baseado no user_type
+      if (result.user_type === 'mentor') {
+        router.replace('/(mentor)/dashboard');
+      } else {
+        router.replace('/(tabs)/home');
+      }
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login');
     } finally {
