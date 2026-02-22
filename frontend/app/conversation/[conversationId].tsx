@@ -368,13 +368,82 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   inputContainer: {
-    padding: 16,
+    padding: 12,
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
   },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  micButton: {
+    marginRight: 4,
+    marginBottom: 4,
+    backgroundColor: '#f0f7ff',
+  },
+  micButtonRecording: {
+    backgroundColor: '#fef2f2',
+  },
   input: {
     backgroundColor: '#f5f5f5',
+    flex: 1,
+  },
+  recordingBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  recordingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#ef4444',
+    marginRight: 8,
+  },
+  recordingText: {
+    flex: 1,
+    color: '#dc2626',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  cancelRecordBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    backgroundColor: '#ffffff',
+  },
+  cancelRecordText: {
+    color: '#64748b',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  transcribingBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eff6ff',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  transcribingText: {
+    marginLeft: 10,
+    color: '#2563eb',
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  audioErrorBar: {
+    backgroundColor: '#fef2f2',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  audioErrorText: {
+    color: '#dc2626',
+    fontSize: 13,
   },
   loadingMessage: {
     flexDirection: 'row',
