@@ -36,7 +36,8 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    console.log('Logout button pressed');
     Alert.alert(
       'Sair',
       'Tem certeza que deseja sair?',
@@ -46,8 +47,15 @@ export default function ProfileScreen() {
           text: 'Sair',
           style: 'destructive',
           onPress: async () => {
-            await logout();
-            router.replace('/(auth)/login');
+            console.log('User confirmed logout');
+            try {
+              await logout();
+              console.log('Logout completed, redirecting to login');
+              router.replace('/(auth)/login');
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Erro', 'Não foi possível fazer logout');
+            }
           },
         },
       ]
