@@ -718,6 +718,101 @@ async def get_mentor_stats(current_user: dict = Depends(get_current_user)):
         top_topics=[]  # TODO: Implement topic extraction
     )
 
+@api_router.get("/mentor/impactometer")
+async def get_impactometer(current_user: dict = Depends(get_current_user)):
+    """Get comprehensive Impactometer dashboard data"""
+    
+    if current_user["user_type"] != "mentor":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    mentor_id = current_user["user_id"]
+    
+    # 1. Get all conversations for this mentor
+    conversations = await db.conversations.find(
+        {"mentor_id": mentor_id}
+    ).to_list(1000)
+    conversation_ids = [c["_id"] for c in conversations]
+    
+    # 2. Get all bot messages
+    bot_messages = await db.messages.find({
+        "conversation_id": {"$in": conversation_ids},
+        "sender_type": SenderType.MENTOR_BOT
+    }).sort("sent_at", -1).to_list(5000)
+    
+    # 3. Get all user messages
+    user_messages = await db.messages.find({
+        "conversation_id": {"$in": conversation_ids},
+        "sender_type": SenderType.USER
+    }).sort("sent_at", -1).to_list(5000)
+    
+    # 4. Queries per day (last 30 days)
+    from collections import defaultdict
+    daily_queries = defaultdict(int)
+    for msg in bot_messages:
+        day = msg["sent_at"].strftime("%Y-%m-%d")
+        daily_queries[day] += 1
+    
+    # Fill in missing days with 0
+    from datetime import timedelta
+    today = datetime.utcnow().date()
+    queries_timeline = []
+    for i in range(29, -1, -1):
+        day = (today - timedelta(days=i)).strftime("%Y-%m-%d")
+        queries_timeline.append({
+            "date": day,
+            "label": (today - timedelta(days=i)).strftime("%d/%m"),
+            "count": daily_queries.get(day, 0)
+        })
+    
+    # 5. Feedback stats
+    likes = sum(1 for m in bot_messages if m.get("feedback") == FeedbackType.LIKE)
+    dislikes = sum(1 for m in bot_messages if m.get("feedback") == FeedbackType.DISLIKE)
+    total_feedback = likes + dislikes
+    
+    # 6. Hot topics (word frequency from user questions)
+    stop_words = {"de", "da", "do", "a", "o", "e", "em", "para", "que", "um", "uma", "os", "as", "no", "na", "é", "são", "por", "com", "se", "ao", "dos", "das", "como", "qual", "quais", "sobre", "entre", "mais", "pode", "sua", "seu", "meu", "minha", "quero", "saber", "favor", "obrigado", "olá", "oi", "bom", "dia", "boa", "tarde", "noite", "dr", "dra", "doutor", "doutora", "me", "fale", "explique", "pode", "poderia", "gostaria", "preciso"}
+    word_counts = defaultdict(int)
+    for msg in user_messages:
+        words = re.findall(r'\b[a-záàâãéèêíïóôõöúçñ]{4,}\b', msg.get("content", "").lower())
+        for w in words:
+            if w not in stop_words:
+                word_counts[w] += 1
+    
+    hot_topics = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)[:20]
+    
+    # 7. Unique users
+    unique_users = set()
+    for conv in conversations:
+        unique_users.add(conv.get("user_id", ""))
+    
+    # 8. Content count
+    total_content = await db.mentor_content.count_documents({
+        "mentor_id": mentor_id,
+        "status": ContentStatus.COMPLETED
+    })
+    
+    # 9. Average response quality (like rate)
+    like_rate = round((likes / total_feedback * 100), 1) if total_feedback > 0 else 0
+    
+    return {
+        "total_queries": len(bot_messages),
+        "total_users": len(unique_users),
+        "total_conversations": len(conversations),
+        "total_content": total_content,
+        "likes": likes,
+        "dislikes": dislikes,
+        "like_rate": like_rate,
+        "queries_timeline": queries_timeline,
+        "hot_topics": [{"word": w, "count": c} for w, c in hot_topics],
+        "recent_queries": [
+            {
+                "question": msg.get("content", "")[:100],
+                "sent_at": msg["sent_at"].isoformat()
+            }
+            for msg in user_messages[:10]
+        ]
+    }
+
 # ==================== CHAT ENDPOINTS ====================
 
 def validate_rag_response(response_text: str, citations: list) -> bool:
