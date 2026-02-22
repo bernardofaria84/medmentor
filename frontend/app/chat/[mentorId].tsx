@@ -31,6 +31,34 @@ export default function ChatScreen() {
   const [mentorName, setMentorName] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
   const router = useRouter();
+  
+  // Audio recording
+  const { 
+    isRecording, 
+    isTranscribing, 
+    recordingDuration, 
+    startRecording, 
+    stopRecording, 
+    cancelRecording,
+    error: audioError 
+  } = useAudioRecorder();
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleMicPress = async () => {
+    if (isRecording) {
+      const text = await stopRecording();
+      if (text) {
+        setInputText(prev => prev ? `${prev} ${text}` : text);
+      }
+    } else {
+      await startRecording();
+    }
+  };
 
   useEffect(() => {
     loadMentorInfo();
