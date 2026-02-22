@@ -31,6 +31,7 @@ export default function MentorProfile() {
   const [snackbar, setSnackbar] = useState({ visible: false, message: '', type: 'info' });
   const router = useRouter();
   const { logout } = useAuth();
+  const { colors, isDark, toggleTheme } = useAppTheme();
 
   useEffect(() => {
     loadProfile();
