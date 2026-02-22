@@ -12,6 +12,9 @@ interface Profile {
   specialty: string;
   bio?: string;
   avatar_url?: string;
+  agent_profile?: string;
+  agent_profile_pending?: string;
+  profile_status?: string;
 }
 
 export default function MentorProfile() {
@@ -21,6 +24,7 @@ export default function MentorProfile() {
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [approving, setApproving] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [snackbar, setSnackbar] = useState({ visible: false, message: '', type: 'info' });
