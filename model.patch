@@ -1,35 +1,40 @@
 diff --git a/model.patch b/model.patch
-index 2a626cf..e69de29 100644
+index 514194d..e69de29 100644
 --- a/model.patch
 +++ b/model.patch
-@@ -1,30 +0,0 @@
+@@ -1,35 +0,0 @@
 -diff --git a/model.patch b/model.patch
--index 3742a94..e69de29 100644
+-index 2a626cf..e69de29 100644
 ---- a/model.patch
 -+++ b/model.patch
--@@ -1,25 +0,0 @@
+-@@ -1,30 +0,0 @@
 --diff --git a/model.patch b/model.patch
---index b7ef152..e69de29 100644
+--index 3742a94..e69de29 100644
 ----- a/model.patch
 --+++ b/model.patch
---@@ -1,20 +0,0 @@
----diff --git a/frontend/app/(auth)/login.tsx b/frontend/app/(auth)/login.tsx
----index b7cdb58..e910dc3 100644
------- a/frontend/app/(auth)/login.tsx
----+++ b/frontend/app/(auth)/login.tsx
----@@ -94,6 +94,15 @@ export default function LoginScreen() {
----               >
----                 Não tem conta? Cadastre-se
----               </Button>
----+              
----+              <Button
----+                mode="text"
----+                onPress={() => router.push('/(mentor)/login')}
----+                disabled={loading}
----+                style={styles.linkButton}
----+              >
----+                Sou Mentor - Entrar no Portal
----+              </Button>
----             </Surface>
---- 
----             <Text variant="bodySmall" style={styles.testCredentials}>
+--@@ -1,25 +0,0 @@
+---diff --git a/model.patch b/model.patch
+---index b7ef152..e69de29 100644
+------ a/model.patch
+---+++ b/model.patch
+---@@ -1,20 +0,0 @@
+----diff --git a/frontend/app/(auth)/login.tsx b/frontend/app/(auth)/login.tsx
+----index b7cdb58..e910dc3 100644
+------- a/frontend/app/(auth)/login.tsx
+----+++ b/frontend/app/(auth)/login.tsx
+----@@ -94,6 +94,15 @@ export default function LoginScreen() {
+----               >
+----                 Não tem conta? Cadastre-se
+----               </Button>
+----+              
+----+              <Button
+----+                mode="text"
+----+                onPress={() => router.push('/(mentor)/login')}
+----+                disabled={loading}
+----+                style={styles.linkButton}
+----+              >
+----+                Sou Mentor - Entrar no Portal
+----+              </Button>
+----             </Surface>
+---- 
+----             <Text variant="bodySmall" style={styles.testCredentials}>
