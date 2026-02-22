@@ -497,6 +497,16 @@ async def get_content_analytics_endpoint(current_user: dict = Depends(get_curren
     analytics = await get_content_analytics(db, current_user["user_id"])
     return analytics
 
+@api_router.get("/mentor/analytics/feedback-details")
+async def get_feedback_details_endpoint(current_user: dict = Depends(get_current_user)):
+    """Get detailed feedback analytics from feedback_logs collection"""
+    
+    if current_user["user_type"] != "mentor":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    analytics = await get_feedback_details_analytics(db, current_user["user_id"])
+    return analytics
+
 @api_router.get("/mentor/content", response_model=List[ContentItem])
 async def list_mentor_content(current_user: dict = Depends(get_current_user)):
     """List all content for current mentor"""
