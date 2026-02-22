@@ -7,6 +7,7 @@ import {
   Platform,
   Keyboard,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 import { Text, TextInput, Card, Chip, ActivityIndicator, IconButton, Button, Portal, Modal } from 'react-native-paper';
 import { useLocalSearchParams, Stack } from 'expo-router';
@@ -15,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Markdown from 'react-native-markdown-display';
 import * as Clipboard from 'expo-clipboard';
 import api from '../../services/api';
+import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 
 export default function ConversationScreen() {
   const { conversationId } = useLocalSearchParams();
