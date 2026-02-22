@@ -71,7 +71,9 @@ class MentorProfile(BaseModel):
     specialty: str
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
-    agent_profile: Optional[str] = None  # AI agent personality profile
+    agent_profile: Optional[str] = None  # AI agent personality profile (active)
+    agent_profile_pending: Optional[str] = None  # Pending profile awaiting mentor approval
+    profile_status: str = "INACTIVE"  # INACTIVE, ACTIVE, PENDING_APPROVAL
     style_traits: Optional[str] = None   # Quick summary of communication style
     created_at: datetime
 
