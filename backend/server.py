@@ -718,6 +718,115 @@ async def get_mentor_stats(current_user: dict = Depends(get_current_user)):
         top_topics=[]  # TODO: Implement topic extraction
     )
 
+# ==================== UNIVERSAL SEMANTIC SEARCH ====================
+
+@api_router.get("/search/universal")
+async def universal_search(
+    q: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Search across ALL mentors' knowledge bases simultaneously.
+    Returns relevant results grouped by mentor with relevance scores.
+    """
+    
+    if not q or len(q.strip()) < 3:
+        raise HTTPException(status_code=400, detail="A busca deve ter pelo menos 3 caracteres")
+    
+    query = q.strip()
+    logger.info(f"🔍 Universal search: '{query}' by user {current_user['user_id']}")
+    
+    try:
+        # 1. Generate embedding for the search query
+        query_embedding = multi_ai_rag_service.generate_embedding(query)
+        
+        # 2. Get ALL mentor content with chunks
+        all_content = await db.mentor_content.find(
+            {"status": ContentStatus.COMPLETED}
+        ).to_list(1000)
+        
+        if not all_content:
+            return {"results": [], "query": query, "total_results": 0}
+        
+        # 3. Build a unified index of all chunks across all mentors
+        all_chunks = []
+        chunk_metadata = []
+        
+        for content in all_content:
+            mentor_id = content["mentor_id"]
+            content_title = content.get("filename", "Conteúdo")
+            
+            for i, chunk in enumerate(content.get("chunks", [])):
+                if "embedding" in chunk and chunk["embedding"]:
+                    all_chunks.append(chunk["embedding"])
+                    chunk_metadata.append({
+                        "text": chunk["text"],
+                        "mentor_id": mentor_id,
+                        "content_id": content["_id"],
+                        "content_title": content_title,
+                    })
+        
+        if not all_chunks:
+            return {"results": [], "query": query, "total_results": 0}
+        
+        # 4. Perform cosine similarity search across ALL chunks
+        indices, scores = multi_ai_rag_service.cosine_similarity_search(
+            query_embedding, all_chunks, top_k=15, min_similarity=0.35
+        )
+        
+        # 5. Build results grouped by mentor
+        mentor_results = {}
+        for idx, score in zip(indices, scores):
+            meta = chunk_metadata[idx]
+            mid = meta["mentor_id"]
+            
+            if mid not in mentor_results:
+                mentor_results[mid] = {
+                    "mentor_id": mid,
+                    "mentor_name": "",
+                    "specialty": "",
+                    "best_score": 0,
+                    "excerpts": []
+                }
+            
+            mentor_results[mid]["excerpts"].append({
+                "text": meta["text"][:300],
+                "score": round(float(score), 3),
+                "content_title": meta["content_title"]
+            })
+            
+            if float(score) > mentor_results[mid]["best_score"]:
+                mentor_results[mid]["best_score"] = round(float(score), 3)
+        
+        # 6. Enrich with mentor info
+        for mid, result in mentor_results.items():
+            mentor = await db.mentors.find_one({"_id": mid})
+            if mentor:
+                result["mentor_name"] = mentor["full_name"]
+                result["specialty"] = mentor["specialty"]
+            
+            # Sort excerpts by score
+            result["excerpts"] = sorted(result["excerpts"], key=lambda x: x["score"], reverse=True)[:3]
+        
+        # 7. Sort results by best_score
+        sorted_results = sorted(
+            mentor_results.values(),
+            key=lambda x: x["best_score"],
+            reverse=True
+        )
+        
+        logger.info(f"🔍 Universal search found {len(sorted_results)} mentor matches for '{query}'")
+        
+        return {
+            "results": sorted_results,
+            "query": query,
+            "total_results": len(sorted_results)
+        }
+        
+    except Exception as e:
+        logger.error(f"Universal search error: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro na busca: {str(e)}")
+
 @api_router.get("/mentor/impactometer")
 async def get_impactometer(current_user: dict = Depends(get_current_user)):
     """Get comprehensive Impactometer dashboard data"""
