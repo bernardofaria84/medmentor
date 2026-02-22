@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Button, Avatar, Surface, Divider, List, Portal, Dialog, Paragraph } from 'react-native-paper';
+import { Text, Button, Avatar, Surface, Divider, List, Portal, Dialog, Switch } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAppTheme } from '../../contexts/ThemeContext';
 import { getUserProfile } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,6 +18,7 @@ interface UserProfile {
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
+  const { isDark, toggleTheme, colors } = useAppTheme();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -39,17 +41,14 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    console.log('Logout button pressed - showing dialog');
     setShowLogoutDialog(true);
   };
 
   const confirmLogout = async () => {
-    console.log('User confirmed logout');
     setLoggingOut(true);
     try {
       await logout();
       setShowLogoutDialog(false);
-      console.log('Logout completed, redirecting to login');
       router.replace('/(auth)/login');
     } catch (error) {
       console.error('Logout error:', error);
@@ -60,87 +59,103 @@ export default function ProfileScreen() {
 
   if (loading || !profile) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Carregando...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <Text style={{ color: colors.textSecondary }}>Carregando...</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Surface style={styles.profileCard} elevation={1}>
+        <Surface style={[styles.profileCard, { backgroundColor: colors.card }]} elevation={1}>
           <View style={styles.avatarContainer}>
             <Avatar.Text
               size={80}
               label={profile.full_name.substring(0, 2).toUpperCase()}
-              style={styles.avatar}
+              style={{ backgroundColor: colors.primary }}
             />
-            <Text variant="headlineSmall" style={styles.name}>
+            <Text variant="headlineSmall" style={[styles.name, { color: colors.text }]}>
               {profile.full_name}
             </Text>
-            <Text variant="bodyMedium" style={styles.email}>
+            <Text variant="bodyMedium" style={{ color: colors.textSecondary }}>
               {profile.email}
             </Text>
           </View>
 
-          <Divider style={styles.divider} />
+          <Divider style={{ marginHorizontal: 16, backgroundColor: colors.border }} />
 
           <View style={styles.infoSection}>
             <List.Item
               title="CRM"
               description={profile.crm}
-              left={props => <List.Icon {...props} icon="card-account-details" />}
+              titleStyle={{ color: colors.text }}
+              descriptionStyle={{ color: colors.textSecondary }}
+              left={props => <List.Icon {...props} icon="card-account-details" color={colors.primary} />}
             />
             {profile.specialty && (
               <List.Item
                 title="Especialidade"
                 description={profile.specialty}
-                left={props => <List.Icon {...props} icon="stethoscope" />}
+                titleStyle={{ color: colors.text }}
+                descriptionStyle={{ color: colors.textSecondary }}
+                left={props => <List.Icon {...props} icon="stethoscope" color={colors.primary} />}
               />
             )}
           </View>
         </Surface>
 
-        <Surface style={styles.menuCard} elevation={1}>
+        <Surface style={[styles.menuCard, { backgroundColor: colors.card }]} elevation={1}>
+          <List.Item
+            title="Modo Escuro"
+            titleStyle={{ color: colors.text }}
+            left={props => <List.Icon {...props} icon={isDark ? 'weather-night' : 'white-balance-sunny'} color={colors.primary} />}
+            right={() => (
+              <Switch
+                value={isDark}
+                onValueChange={toggleTheme}
+                color={colors.primary}
+                testID="dark-mode-toggle"
+              />
+            )}
+            data-testid="dark-mode-item"
+          />
+          <Divider style={{ backgroundColor: colors.border }} />
           <List.Item
             title="Sobre o MedMentor"
-            left={props => <List.Icon {...props} icon="information" />}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => {}}
+            titleStyle={{ color: colors.text }}
+            left={props => <List.Icon {...props} icon="information" color={colors.primary} />}
+            right={props => <List.Icon {...props} icon="chevron-right" color={colors.textTertiary} />}
+            onPress={() => router.push('/(tabs)/about')}
+            data-testid="about-link"
           />
-          <Divider />
-          <List.Item
-            title="Ajuda e Suporte"
-            left={props => <List.Icon {...props} icon="help-circle" />}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => {}}
-          />
-          <Divider />
+          <Divider style={{ backgroundColor: colors.border }} />
           <List.Item
             title="Termos de Uso"
-            left={props => <List.Icon {...props} icon="file-document" />}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
-            onPress={() => {}}
+            titleStyle={{ color: colors.text }}
+            left={props => <List.Icon {...props} icon="file-document" color={colors.primary} />}
+            right={props => <List.Icon {...props} icon="chevron-right" color={colors.textTertiary} />}
+            onPress={() => router.push('/(tabs)/about')}
+            data-testid="terms-link"
           />
         </Surface>
 
         <Button
           mode="outlined"
           onPress={handleLogout}
-          style={styles.logoutButton}
+          style={[styles.logoutButton, { borderColor: colors.error }]}
           icon="logout"
-          textColor="#ef4444"
+          textColor={colors.error}
+          data-testid="logout-btn"
         >
           Sair
         </Button>
 
-        <Text variant="bodySmall" style={styles.versionText}>
-          MedMentor v1.0.0
+        <Text variant="bodySmall" style={[styles.versionText, { color: colors.textTertiary }]}>
+          MedMentor v2.0.0
         </Text>
       </ScrollView>
 
-      {/* Logout Confirmation Dialog */}
       <Portal>
         <Dialog visible={showLogoutDialog} onDismiss={() => setShowLogoutDialog(false)}>
           <Dialog.Icon icon="logout" />
@@ -152,9 +167,9 @@ export default function ProfileScreen() {
             <Button onPress={() => setShowLogoutDialog(false)} disabled={loggingOut}>
               Cancelar
             </Button>
-            <Button 
-              onPress={confirmLogout} 
-              textColor="#ef4444"
+            <Button
+              onPress={confirmLogout}
+              textColor={colors.error}
               loading={loggingOut}
               disabled={loggingOut}
             >
@@ -170,7 +185,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
   },
   loadingContainer: {
     flex: 1,
@@ -182,44 +196,30 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     borderRadius: 16,
-    backgroundColor: '#ffffff',
     marginBottom: 16,
   },
   avatarContainer: {
     alignItems: 'center',
     padding: 24,
   },
-  avatar: {
-    backgroundColor: '#2563eb',
-    marginBottom: 16,
-  },
   name: {
     fontWeight: 'bold',
-    color: '#1e293b',
+    marginTop: 16,
     marginBottom: 4,
-  },
-  email: {
-    color: '#64748b',
-  },
-  divider: {
-    marginHorizontal: 16,
   },
   infoSection: {
     paddingVertical: 8,
   },
   menuCard: {
     borderRadius: 16,
-    backgroundColor: '#ffffff',
     marginBottom: 16,
   },
   logoutButton: {
     marginTop: 8,
-    borderColor: '#ef4444',
   },
   versionText: {
     textAlign: 'center',
     marginTop: 24,
-    color: '#94a3b8',
   },
   dialogTitle: {
     textAlign: 'center',
