@@ -29,7 +29,8 @@ from exceptions import ResponseValidationError
 from analytics_service import (
     get_queries_analytics,
     get_ratings_analytics,
-    get_content_analytics
+    get_content_analytics,
+    get_feedback_details_analytics
 )
 
 # Load environment variables
