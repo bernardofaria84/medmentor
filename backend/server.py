@@ -883,7 +883,7 @@ async def get_conversation_messages(
         MessageItem(
             id=msg["_id"],
             sender_type=msg["sender_type"],
-            content=msg["content"],
+            content=re.sub(r'\[source_\d+\]', '', re.sub(r'\[PACIENTE_\d+\]', 'paciente', msg["content"])).strip(),
             citations=[Citation(**c) for c in msg.get("citations", [])],
             feedback=msg.get("feedback", FeedbackType.NONE),
             sent_at=msg["sent_at"]
