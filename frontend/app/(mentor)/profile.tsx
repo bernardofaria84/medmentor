@@ -506,4 +506,20 @@ const styles = StyleSheet.create({
   uploadButton: {
     marginTop: 4,
   },
+  activeProfileBox: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  activeProfileLabel: {
+    color: '#166534',
+    marginBottom: 8,
+  },
+  activeProfileText: {
+    color: '#374151',
+    lineHeight: 18,
+  },
 });
