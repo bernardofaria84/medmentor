@@ -1019,16 +1019,61 @@ async def update_message_feedback(
     feedback: FeedbackType,
     current_user: dict = Depends(get_current_user)
 ):
-    """Update feedback (like/dislike) for a message"""
+    """Update feedback (like/dislike) for a message and create detailed feedback log"""
     
     message = await db.messages.find_one({"_id": message_id})
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
     
+    # Update the message feedback
     await db.messages.update_one(
         {"_id": message_id},
         {"$set": {"feedback": feedback}}
     )
+    
+    # ===== FEEDBACK LOG (Melhoria #3) =====
+    # Create detailed log in feedback_logs collection for analytics
+    try:
+        # Get conversation to find mentor_id
+        conversation = await db.conversations.find_one({"_id": message["conversation_id"]})
+        
+        # Find the user's question that preceded this bot response
+        question_text = ""
+        if message["sender_type"] == SenderType.MENTOR_BOT:
+            prev_user_msg = await db.messages.find_one({
+                "conversation_id": message["conversation_id"],
+                "sender_type": SenderType.USER,
+                "sent_at": {"$lt": message["sent_at"]}
+            }, sort=[("sent_at", -1)])
+            if prev_user_msg:
+                question_text = prev_user_msg.get("content", "")
+        
+        # Extract context_chunks_ids from citations
+        context_chunks_ids = [c.get("source_id", "") for c in message.get("citations", [])]
+        
+        # Determine which AI was used (stored in message metadata if available)
+        ai_used = message.get("ai_used", "unknown")
+        
+        feedback_log = {
+            "_id": str(uuid.uuid4()),
+            "message_id": message_id,
+            "conversation_id": message["conversation_id"],
+            "mentor_id": conversation["mentor_id"] if conversation else "unknown",
+            "user_id": current_user["user_id"],
+            "feedback_type": feedback,
+            "feedback_at": datetime.utcnow(),
+            "question": question_text,
+            "response_text": message.get("content", ""),
+            "context_chunks_ids": context_chunks_ids,
+            "ai_used": ai_used
+        }
+        
+        await db.feedback_logs.insert_one(feedback_log)
+        logger.info(f"📊 Feedback log created: {feedback} for message {message_id}")
+        
+    except Exception as e:
+        # Don't fail the main feedback update if logging fails
+        logger.error(f"Error creating feedback log: {e}")
     
     return {"message": "Feedback updated successfully"}
 
