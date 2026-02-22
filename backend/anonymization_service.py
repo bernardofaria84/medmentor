@@ -1,163 +1,80 @@
 """
-LGPD/HIPAA Compliant Data Anonymization Service
-Removes Personally Identifiable Information (PII) from user messages
+LGPD/HIPAA Compliant Data Anonymization Service - Lightweight Version
+Removes obvious PII (CPF, phone, email, dates) using regex patterns.
+Does NOT use NER/spaCy to avoid false positives with common Portuguese words.
 """
 
-import spacy
 import re
-from typing import Dict, List
-from datetime import datetime
+from typing import Dict
 
-# Load Portuguese NER model
-nlp = spacy.load("pt_core_news_lg")
 
 class AnonymizationService:
-    """Service for anonymizing PII in medical conversations"""
+    """Lightweight PII anonymization using regex patterns only"""
     
-    def __init__(self):
-        self.entity_counters = {}  # Track entity replacements per session
-        
     def anonymize_text(self, text: str, conversation_id: str = None) -> Dict[str, str]:
         """
-        Anonymize PII from text while preserving medical context
+        Anonymize obvious PII from text while preserving medical context.
+        Only removes structured PII patterns (CPF, phone, email, etc.)
+        Does NOT attempt to detect names via NER (too many false positives in Portuguese).
         
         Returns:
-            Dict with 'anonymized_text' (for storage) and 'original_text' (for AI processing)
+            Dict with 'anonymized_text' and 'original_text'
         """
         
         if not text or not text.strip():
-            return {"anonymized_text": text, "original_text": text}
-        
-        # Initialize counter for this conversation if needed
-        if conversation_id and conversation_id not in self.entity_counters:
-            self.entity_counters[conversation_id] = {
-                "PER": 0,  # Person names
-                "LOC": 0,  # Locations
-                "ORG": 0,  # Organizations
-                "DATE": 0  # Dates
-            }
-        
-        # Process text with spaCy NER
-        doc = nlp(text)
+            return {"anonymized_text": text, "original_text": text, "replacements": []}
         
         anonymized_text = text
         replacements = []
         
-        # Extract and replace named entities
-        for ent in reversed(doc.ents):  # Reverse to maintain correct indices
-            entity_type = ent.label_
-            entity_text = ent.text
-            start = ent.start_char
-            end = ent.end_char
-            
-            placeholder = None
-            
-            # Map entity types to LGPD/HIPAA categories
-            if entity_type == "PER":  # Person names
-                if conversation_id:
-                    self.entity_counters[conversation_id]["PER"] += 1
-                    placeholder = f"[PACIENTE_{self.entity_counters[conversation_id]['PER']}]"
-                else:
-                    placeholder = "[PACIENTE]"
-                    
-            elif entity_type in ["LOC"]:  # Locations
-                if conversation_id:
-                    self.entity_counters[conversation_id]["LOC"] += 1
-                    placeholder = f"[LOCAL_{self.entity_counters[conversation_id]['LOC']}]"
-                else:
-                    placeholder = "[LOCAL]"
-                    
-            elif entity_type == "ORG":  # Organizations (hospitals, clinics)
-                if conversation_id:
-                    self.entity_counters[conversation_id]["ORG"] += 1
-                    placeholder = f"[INSTITUIÇÃO_{self.entity_counters[conversation_id]['ORG']}]"
-                else:
-                    placeholder = "[INSTITUIÇÃO]"
-            
-            # Replace entity in text
-            if placeholder:
-                anonymized_text = (
-                    anonymized_text[:start] + 
-                    placeholder + 
-                    anonymized_text[end:]
-                )
-                replacements.append({
-                    "original": entity_text,
-                    "placeholder": placeholder,
-                    "type": entity_type,
-                    "start": start,
-                    "end": end
-                })
+        # 1. Anonymize Brazilian CPF: xxx.xxx.xxx-xx
+        cpf_pattern = r'\b\d{3}\.\d{3}\.\d{3}-\d{2}\b'
+        for match in re.finditer(cpf_pattern, anonymized_text):
+            replacements.append({"original": match.group(), "placeholder": "[CPF]", "type": "CPF"})
+        anonymized_text = re.sub(cpf_pattern, '[CPF]', anonymized_text)
         
-        # Additional regex-based anonymization for dates
-        anonymized_text = self._anonymize_dates(anonymized_text, conversation_id)
+        # 2. Anonymize Brazilian RG: xx.xxx.xxx-x
+        rg_pattern = r'\b\d{2}\.\d{3}\.\d{3}-\d{1}\b'
+        for match in re.finditer(rg_pattern, anonymized_text):
+            replacements.append({"original": match.group(), "placeholder": "[RG]", "type": "RG"})
+        anonymized_text = re.sub(rg_pattern, '[RG]', anonymized_text)
         
-        # Anonymize Brazilian documents (CPF, RG)
-        anonymized_text = self._anonymize_br_documents(anonymized_text)
+        # 3. Anonymize CNS (Cartão Nacional de Saúde): 15 digits
+        cns_pattern = r'\b\d{15}\b'
+        for match in re.finditer(cns_pattern, anonymized_text):
+            replacements.append({"original": match.group(), "placeholder": "[CNS]", "type": "CNS"})
+        anonymized_text = re.sub(cns_pattern, '[CNS]', anonymized_text)
         
-        # Anonymize phone numbers
-        anonymized_text = self._anonymize_phone_numbers(anonymized_text)
+        # 4. Anonymize phone numbers (Brazilian patterns)
+        phone_patterns = [
+            r'\+55\s?\(?\d{2}\)?\s?\d{4,5}-?\d{4}',   # +55 (11) 98765-4321
+            r'\(\d{2}\)\s?\d{4,5}-?\d{4}',              # (11) 98765-4321
+        ]
+        for pattern in phone_patterns:
+            for match in re.finditer(pattern, anonymized_text):
+                replacements.append({"original": match.group(), "placeholder": "[TELEFONE]", "type": "PHONE"})
+            anonymized_text = re.sub(pattern, '[TELEFONE]', anonymized_text)
         
-        # Anonymize emails
-        anonymized_text = self._anonymize_emails(anonymized_text)
+        # 5. Anonymize emails
+        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+        for match in re.finditer(email_pattern, anonymized_text):
+            replacements.append({"original": match.group(), "placeholder": "[EMAIL]", "type": "EMAIL"})
+        anonymized_text = re.sub(email_pattern, '[EMAIL]', anonymized_text)
+        
+        # 6. Anonymize full date patterns (dd/mm/yyyy only - not partial dates)
+        date_pattern = r'\b\d{1,2}/\d{1,2}/\d{4}\b'
+        for match in re.finditer(date_pattern, anonymized_text):
+            replacements.append({"original": match.group(), "placeholder": "[DATA]", "type": "DATE"})
+        anonymized_text = re.sub(date_pattern, '[DATA]', anonymized_text)
         
         return {
             "anonymized_text": anonymized_text,
-            "original_text": text,  # Keep original for AI context
+            "original_text": text,
             "replacements": replacements
         }
     
-    def _anonymize_dates(self, text: str, conversation_id: str = None) -> str:
-        """Anonymize date patterns"""
-        # Brazilian date formats: dd/mm/yyyy, dd-mm-yyyy
-        date_patterns = [
-            r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b',  # dd/mm/yyyy or dd-mm-yyyy
-            r'\b\d{4}[/-]\d{1,2}[/-]\d{1,2}\b',    # yyyy-mm-dd
-        ]
-        
-        for pattern in date_patterns:
-            text = re.sub(pattern, '[DATA]', text)
-        
-        return text
-    
-    def _anonymize_br_documents(self, text: str) -> str:
-        """Anonymize Brazilian documents (CPF, RG, CNS)"""
-        # CPF: xxx.xxx.xxx-xx or xxxxxxxxxxx
-        text = re.sub(r'\b\d{3}\.\d{3}\.\d{3}-\d{2}\b', '[CPF]', text)
-        text = re.sub(r'\b\d{11}\b', '[CPF]', text)
-        
-        # RG: xx.xxx.xxx-x
-        text = re.sub(r'\b\d{2}\.\d{3}\.\d{3}-\d{1}\b', '[RG]', text)
-        
-        # CNS (Cartão Nacional de Saúde): 15 digits
-        text = re.sub(r'\b\d{15}\b', '[CNS]', text)
-        
-        return text
-    
-    def _anonymize_phone_numbers(self, text: str) -> str:
-        """Anonymize phone numbers"""
-        # Brazilian phone patterns
-        phone_patterns = [
-            r'\(\d{2}\)\s?\d{4,5}-?\d{4}',  # (11) 98765-4321 or (11) 3456-7890
-            r'\b\d{2}\s?\d{4,5}-?\d{4}\b',  # 11 98765-4321
-            r'\+55\s?\d{2}\s?\d{4,5}-?\d{4}',  # +55 11 98765-4321
-        ]
-        
-        for pattern in phone_patterns:
-            text = re.sub(pattern, '[TELEFONE]', text)
-        
-        return text
-    
-    def _anonymize_emails(self, text: str) -> str:
-        """Anonymize email addresses"""
-        email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-        text = re.sub(email_pattern, '[EMAIL]', text)
-        return text
-    
     def get_anonymization_stats(self, conversation_id: str) -> Dict:
-        """Get anonymization statistics for a conversation"""
-        if conversation_id in self.entity_counters:
-            return self.entity_counters[conversation_id]
+        """Get anonymization statistics (lightweight version returns empty)"""
         return {}
 
 
