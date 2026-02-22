@@ -419,19 +419,20 @@ async def upload_content(
                     existing_profile=existing_profile
                 )
                 
-                # Update mentor document with new profile
+                # Update mentor document with PENDING profile (requires mentor approval)
                 await db.mentors.update_one(
                     {"_id": current_user["user_id"]},
                     {
                         "$set": {
-                            "agent_profile": profile_data["profile_text"],
-                            "style_traits": profile_data["style_traits"],
+                            "agent_profile_pending": profile_data["profile_text"],
+                            "style_traits_pending": profile_data["style_traits"],
+                            "profile_status": "PENDING_APPROVAL",
                             "profile_updated_at": datetime.utcnow()
                         }
                     }
                 )
                 
-                logger.info(f"AI agent profile updated successfully (source: {profile_data['analysis_source']})")
+                logger.info(f"AI agent profile generated and PENDING APPROVAL (source: {profile_data['analysis_source']})")
                 
             except Exception as profile_error:
                 logger.error(f"Error generating agent profile: {profile_error}")
