@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Card, TextInput, Button, ActivityIndicator, Avatar, Portal, Dialog, Snackbar } from 'react-native-paper';
+import { Text, Card, TextInput, Button, ActivityIndicator, Avatar, Portal, Dialog, Snackbar, Switch } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAppTheme } from '../../contexts/ThemeContext';
 
 interface Profile {
   id: string;
