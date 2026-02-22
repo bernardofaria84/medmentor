@@ -16,7 +16,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ user_type: string }>;
   signup: (email: string, password: string, fullName: string, crm: string, specialty?: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
