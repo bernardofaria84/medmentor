@@ -725,6 +725,19 @@ async def chat_with_mentor(
     if not mentor:
         raise HTTPException(status_code=404, detail="Mentor not found")
     
+    # Check if mentor's bot profile is active
+    profile_status = mentor.get("profile_status", "INACTIVE")
+    if profile_status == "INACTIVE":
+        raise HTTPException(
+            status_code=400, 
+            detail="O bot de IA deste mentor está inativo. O mentor precisa fazer upload de conteúdo para ativar."
+        )
+    elif profile_status == "PENDING_APPROVAL":
+        raise HTTPException(
+            status_code=400,
+            detail="O perfil do bot de IA deste mentor está aguardando aprovação. Tente novamente em breve."
+        )
+    
     # Get or create conversation
     if chat_request.conversation_id:
         conversation = await db.conversations.find_one({"_id": chat_request.conversation_id})
