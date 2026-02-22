@@ -212,35 +212,35 @@ export default function MentorProfile() {
 
   if (loading || !profile) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563eb" />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Card style={styles.avatarCard}>
+        <Card style={[styles.avatarCard, { backgroundColor: colors.card }]}>
           <Card.Content style={styles.avatarContent}>
             <Avatar.Text
               size={100}
               label={profile.full_name.substring(0, 2).toUpperCase()}
-              style={styles.avatar}
+              style={{ backgroundColor: colors.primary, marginBottom: 16 }}
             />
-            <Text variant="headlineSmall" style={styles.name}>
+            <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: colors.text, marginBottom: 4 }}>
               {profile.full_name}
             </Text>
-            <Text variant="bodyMedium" style={styles.email}>
+            <Text variant="bodyMedium" style={{ color: colors.textSecondary }}>
               {profile.email}
             </Text>
           </Card.Content>
         </Card>
 
-        <Card style={styles.formCard}>
+        <Card style={[styles.formCard, { backgroundColor: colors.card }]}>
           <Card.Content>
-            <Text variant="titleLarge" style={styles.cardTitle}>
-              Informações do Perfil
+            <Text variant="titleLarge" style={{ fontWeight: 'bold', color: colors.text, marginBottom: 16 }}>
+              Informacoes do Perfil
             </Text>
 
             <TextInput
