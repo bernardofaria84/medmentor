@@ -317,4 +317,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     borderColor: '#ef4444',
   },
+  dialogTitle: {
+    textAlign: 'center',
+  },
 });
