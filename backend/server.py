@@ -301,8 +301,55 @@ async def get_mentor_profile(current_user: dict = Depends(get_current_user)):
         specialty=mentor["specialty"],
         bio=mentor.get("bio"),
         avatar_url=mentor.get("avatar_url"),
+        agent_profile=mentor.get("agent_profile"),
+        agent_profile_pending=mentor.get("agent_profile_pending"),
+        profile_status=mentor.get("profile_status", "INACTIVE"),
+        style_traits=mentor.get("style_traits"),
         created_at=mentor["created_at"]
     )
+
+@api_router.post("/mentors/profile/approve")
+async def approve_mentor_profile(current_user: dict = Depends(get_current_user)):
+    """Mentor approves the pending AI bot profile to activate it"""
+    
+    if current_user["user_type"] != "mentor":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    mentor = await db.mentors.find_one({"_id": current_user["user_id"]})
+    if not mentor:
+        raise HTTPException(status_code=404, detail="Mentor not found")
+    
+    if mentor.get("profile_status") != "PENDING_APPROVAL":
+        raise HTTPException(
+            status_code=400, 
+            detail="Não há perfil pendente para aprovação"
+        )
+    
+    pending_profile = mentor.get("agent_profile_pending")
+    if not pending_profile:
+        raise HTTPException(
+            status_code=400,
+            detail="Perfil pendente não encontrado"
+        )
+    
+    # Activate: copy pending to active, clear pending, set status to ACTIVE
+    await db.mentors.update_one(
+        {"_id": current_user["user_id"]},
+        {
+            "$set": {
+                "agent_profile": pending_profile,
+                "style_traits": mentor.get("style_traits_pending", mentor.get("style_traits", "")),
+                "agent_profile_pending": None,
+                "style_traits_pending": None,
+                "profile_status": "ACTIVE",
+                "profile_activated_at": datetime.utcnow()
+            }
+        }
+    )
+    
+    logger.info(f"✅ Mentor {current_user['user_id']} approved and activated their bot profile")
+    
+    return {"message": "Perfil do bot aprovado e ativado com sucesso!", "status": "ACTIVE"}
 
 @api_router.put("/mentors/profile")
 async def update_mentor_profile(
