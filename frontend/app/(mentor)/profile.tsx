@@ -96,6 +96,107 @@ export default function MentorProfile() {
     }
   };
 
+  const handleApproveProfile = async () => {
+    setApproving(true);
+    try {
+      await api.post('/api/mentors/profile/approve');
+      showSnackbar('Perfil do bot aprovado e ativado com sucesso!', 'success');
+      loadProfile(); // Reload to get updated status
+    } catch (error: any) {
+      console.error('Error approving profile:', error);
+      showSnackbar(error.response?.data?.detail || 'Erro ao aprovar perfil', 'error');
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const renderBotStatusCard = () => {
+    const status = profile?.profile_status || 'INACTIVE';
+    
+    if (status === 'ACTIVE') {
+      return (
+        <Card style={[styles.botStatusCard, styles.botStatusActive]}>
+          <Card.Content>
+            <View style={styles.botStatusHeader}>
+              <Text style={styles.botStatusIcon}>✅</Text>
+              <Text variant="titleMedium" style={styles.botStatusTitle}>
+                Bot de IA Ativo
+              </Text>
+            </View>
+            <Text variant="bodyMedium" style={styles.botStatusText}>
+              Seu bot de IA está ativo e operando com o perfil mais recente.
+            </Text>
+          </Card.Content>
+        </Card>
+      );
+    }
+    
+    if (status === 'INACTIVE') {
+      return (
+        <Card style={[styles.botStatusCard, styles.botStatusInactive]}>
+          <Card.Content>
+            <View style={styles.botStatusHeader}>
+              <Text style={styles.botStatusIcon}>⚠️</Text>
+              <Text variant="titleMedium" style={styles.botStatusTitleWarn}>
+                Bot de IA Inativo
+              </Text>
+            </View>
+            <Text variant="bodyMedium" style={styles.botStatusText}>
+              Seu bot de IA está inativo. Faça o upload de conteúdo para gerar e ativar seu perfil de IA.
+            </Text>
+            <Button
+              mode="contained"
+              onPress={() => router.push('/(mentor)/content')}
+              style={styles.uploadButton}
+              icon="upload"
+            >
+              Ir para Upload de Conteúdo
+            </Button>
+          </Card.Content>
+        </Card>
+      );
+    }
+    
+    // PENDING_APPROVAL
+    return (
+      <Card style={[styles.botStatusCard, styles.botStatusPending]}>
+        <Card.Content>
+          <View style={styles.botStatusHeader}>
+            <Text style={styles.botStatusIcon}>🔍</Text>
+            <Text variant="titleMedium" style={styles.botStatusTitlePending}>
+              Aprovação de Perfil Pendente
+            </Text>
+          </View>
+          <Text variant="bodyMedium" style={styles.botStatusText}>
+            Um novo perfil de personalidade foi gerado para seu bot de IA. Revise o perfil abaixo e aprove para ativá-lo.
+          </Text>
+          
+          {profile?.agent_profile_pending && (
+            <View style={styles.pendingProfileBox}>
+              <Text variant="labelLarge" style={styles.pendingProfileLabel}>
+                Perfil Gerado pela IA:
+              </Text>
+              <Text variant="bodySmall" style={styles.pendingProfileText}>
+                {profile.agent_profile_pending}
+              </Text>
+            </View>
+          )}
+          
+          <Button
+            mode="contained"
+            onPress={handleApproveProfile}
+            loading={approving}
+            disabled={approving}
+            style={styles.approveButton}
+            icon="check-circle"
+          >
+            Aprovar e Ativar Perfil
+          </Button>
+        </Card.Content>
+      </Card>
+    );
+  };
+
   if (loading || !profile) {
     return (
       <View style={styles.loadingContainer}>
