@@ -27,7 +27,16 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="(mentor)" />
             <Stack.Screen name="chat/[mentorId]" />
-            <Stack.Screen name="conversation/[conversationId]" />
+            <Stack.Screen 
+              name="conversation/[conversationId]" 
+              options={{
+                headerShown: true,
+                title: 'Conversa',
+                headerStyle: { backgroundColor: '#2563eb' },
+                headerTintColor: '#ffffff',
+                headerTitleStyle: { fontWeight: 'bold' },
+              }}
+            />
           </Stack>
         </AuthProvider>
       </PaperProvider>
