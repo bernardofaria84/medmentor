@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { BarChart } from 'react-native-gifted-charts';
+import MentorOnboarding from '../../components/MentorOnboarding';
 
 interface ImpactometerData {
   total_queries: number;
@@ -25,6 +26,7 @@ export default function MentorDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const router = useRouter();
   const { user, logout } = useAuth();
 
@@ -36,6 +38,10 @@ export default function MentorDashboard() {
     try {
       const response = await api.get('/api/mentor/impactometer');
       setData(response.data);
+      // Show onboarding if mentor has no content
+      if (response.data.total_content === 0 && response.data.total_queries === 0) {
+        setShowOnboarding(true);
+      }
     } catch (error) {
       console.error('Error loading impactometer:', error);
     } finally {
