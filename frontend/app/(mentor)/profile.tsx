@@ -286,6 +286,9 @@ export default function MentorProfile() {
           </Card.Content>
         </Card>
 
+        {/* Bot AI Status Card */}
+        {renderBotStatusCard()}
+
         <Card style={styles.dangerCard}>
           <Card.Content>
             <Text variant="titleMedium" style={styles.dangerTitle}>
