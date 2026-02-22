@@ -660,6 +660,44 @@ async def get_mentor_stats(current_user: dict = Depends(get_current_user)):
 
 # ==================== CHAT ENDPOINTS ====================
 
+def validate_rag_response(response_text: str, citations: list) -> bool:
+    """
+    Validate RAG response quality before sending to user.
+    
+    Checks:
+    1. Response must contain at least one citation [source_N] if citations were provided
+    2. All [source_N] tags in the response must reference valid citations
+    
+    Raises ResponseValidationError if validation fails.
+    """
+    import re as re_val
+    
+    # Find all [source_N] references in the response
+    source_refs = re_val.findall(r'\[source_(\d+)\]', response_text)
+    
+    # If citations were provided but the response has NONE, it's suspicious
+    if citations and len(citations) > 0 and len(source_refs) == 0:
+        logger.warning(f"VALIDATION WARNING: Response has {len(citations)} available citations but references none")
+        raise ResponseValidationError(
+            message="Response has no citation references despite available sources",
+            response_text=response_text,
+            citations=citations
+        )
+    
+    # Check that all referenced sources exist in the citations list
+    valid_source_ids = {c.get("source_id", "") for c in citations}
+    for ref_num in source_refs:
+        source_id = f"source_{ref_num}"
+        if source_id not in valid_source_ids:
+            logger.warning(f"VALIDATION FAILED: Response references '{source_id}' which is not in valid citations: {valid_source_ids}")
+            raise ResponseValidationError(
+                message=f"Response references fabricated source: {source_id}",
+                response_text=response_text,
+                citations=citations
+            )
+    
+    return True
+
 @api_router.post("/chat", response_model=ChatResponse)
 async def chat_with_mentor(
     chat_request: ChatRequest,
