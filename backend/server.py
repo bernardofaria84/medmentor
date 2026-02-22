@@ -924,14 +924,20 @@ async def summarize_conversation(
     if not mentor:
         raise HTTPException(status_code=404, detail="Mentor not found")
     
-    # Prepare messages for summarization
-    msg_list = [
-        {
+    # Prepare messages for summarization (clean up any legacy tags)
+    msg_list = []
+    for msg in messages:
+        content = msg["content"]
+        # Clean legacy [source_N] and [PACIENTE_N] tags from stored messages
+        content = re.sub(r'\[source_\d+\]', '', content)
+        content = re.sub(r'\[PACIENTE_\d+\]', 'paciente', content)
+        content = re.sub(r'\[LOCAL_\d+\]', 'local', content)
+        content = re.sub(r'\[INSTITUIÇÃO_\d+\]', 'instituição', content)
+        content = re.sub(r'\s{2,}', ' ', content).strip()
+        msg_list.append({
             "sender_type": msg["sender_type"],
-            "content": msg["content"]
-        }
-        for msg in messages
-    ]
+            "content": content
+        })
     
     # Generate SOAP summary
     try:
