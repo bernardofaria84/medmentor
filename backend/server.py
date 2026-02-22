@@ -967,6 +967,81 @@ async def update_message_feedback(
     
     return {"message": "Feedback updated successfully"}
 
+# ==================== AUDIO TRANSCRIPTION ====================
+
+@api_router.post("/transcribe")
+async def transcribe_audio(
+    audio: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Transcribe audio to text using OpenAI Whisper"""
+    
+    # Validate file type
+    allowed_types = ['audio/webm', 'audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/mp4', 'audio/m4a', 'audio/ogg', 'audio/flac', 'application/octet-stream']
+    if audio.content_type and audio.content_type not in allowed_types:
+        logger.warning(f"Rejected audio type: {audio.content_type}")
+    
+    # Read audio content
+    audio_content = await audio.read()
+    
+    if len(audio_content) == 0:
+        raise HTTPException(status_code=400, detail="Arquivo de áudio vazio")
+    
+    if len(audio_content) > 25 * 1024 * 1024:  # 25MB limit (Whisper API limit)
+        raise HTTPException(status_code=400, detail="Arquivo muito grande. Máximo: 25MB")
+    
+    logger.info(f"Transcribing audio: size={len(audio_content)} bytes, type={audio.content_type}, filename={audio.filename}")
+    
+    try:
+        from openai import OpenAI
+        
+        openai_key = os.environ.get('OPENAI_API_KEY')
+        if not openai_key:
+            raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+        
+        client_openai = OpenAI(api_key=openai_key)
+        
+        # Determine file extension from content type or filename
+        ext_map = {
+            'audio/webm': 'webm',
+            'audio/wav': 'wav',
+            'audio/mp3': 'mp3',
+            'audio/mpeg': 'mp3',
+            'audio/mp4': 'mp4',
+            'audio/m4a': 'm4a',
+            'audio/ogg': 'ogg',
+            'audio/flac': 'flac',
+        }
+        ext = ext_map.get(audio.content_type, 'webm')
+        filename = audio.filename or f"audio.{ext}"
+        
+        # Create a file-like object for the API
+        audio_file = io.BytesIO(audio_content)
+        audio_file.name = filename
+        
+        whisper_model = os.environ.get('WHISPER_MODEL', 'whisper-1')
+        
+        transcript = client_openai.audio.transcriptions.create(
+            model=whisper_model,
+            file=audio_file,
+            language="pt",  # Portuguese
+            response_format="text"
+        )
+        
+        logger.info(f"Transcription successful: '{transcript[:100]}...' " if len(str(transcript)) > 100 else f"Transcription successful: '{transcript}'")
+        
+        return {
+            "text": transcript.strip() if isinstance(transcript, str) else str(transcript).strip(),
+            "language": "pt"
+        }
+        
+    except Exception as e:
+        logger.error(f"Transcription error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro na transcrição: {str(e)}"
+        )
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/health")
