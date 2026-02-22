@@ -25,6 +25,11 @@ class FeedbackType(str, Enum):
     DISLIKE = "DISLIKE"
     NONE = "NONE"
 
+class ProfileStatus(str, Enum):
+    INACTIVE = "INACTIVE"
+    ACTIVE = "ACTIVE"
+    PENDING_APPROVAL = "PENDING_APPROVAL"
+
 # Request/Response Models
 class UserSignup(BaseModel):
     email: EmailStr
