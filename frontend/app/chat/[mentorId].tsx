@@ -209,24 +209,62 @@ export default function ChatScreen() {
           </ScrollView>
 
           <View style={styles.inputContainer}>
-            <TextInput
-              mode="outlined"
-              placeholder="Digite sua pergunta..."
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              maxLength={1000}
-              style={styles.input}
-              disabled={loading}
-              right={
-                <TextInput.Icon
-                  icon="send"
-                  onPress={handleSend}
-                  disabled={!inputText.trim() || loading}
-                  color={inputText.trim() && !loading ? '#2563eb' : '#cbd5e1'}
-                />
-              }
-            />
+            {/* Recording indicator */}
+            {isRecording && (
+              <View style={styles.recordingBar}>
+                <View style={styles.recordingDot} />
+                <Text style={styles.recordingText}>
+                  Gravando... {formatDuration(recordingDuration)}
+                </Text>
+                <TouchableOpacity onPress={cancelRecording} style={styles.cancelRecordBtn}>
+                  <Text style={styles.cancelRecordText}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            {/* Transcribing indicator */}
+            {isTranscribing && (
+              <View style={styles.transcribingBar}>
+                <ActivityIndicator size="small" color="#2563eb" />
+                <Text style={styles.transcribingText}>Transcrevendo áudio...</Text>
+              </View>
+            )}
+
+            {/* Audio error */}
+            {audioError && !isRecording && !isTranscribing && (
+              <View style={styles.audioErrorBar}>
+                <Text style={styles.audioErrorText}>{audioError}</Text>
+              </View>
+            )}
+
+            <View style={styles.inputRow}>
+              <IconButton
+                icon={isRecording ? "stop-circle" : "microphone"}
+                iconColor={isRecording ? "#ef4444" : "#2563eb"}
+                size={24}
+                onPress={handleMicPress}
+                disabled={loading || isTranscribing}
+                style={[styles.micButton, isRecording && styles.micButtonRecording]}
+              />
+              <TextInput
+                mode="outlined"
+                placeholder="Digite ou grave sua pergunta..."
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+                maxLength={1000}
+                style={styles.input}
+                disabled={loading || isRecording}
+                right={
+                  <TextInput.Icon
+                    icon="send"
+                    onPress={handleSend}
+                    disabled={!inputText.trim() || loading}
+                    color={inputText.trim() && !loading ? '#2563eb' : '#cbd5e1'}
+                  />
+                }
+              />
+            </View>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
