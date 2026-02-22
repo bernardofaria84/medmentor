@@ -302,7 +302,20 @@ export default function MentorProfile() {
         {/* Bot AI Status Card */}
         {renderBotStatusCard()}
 
-        <Card style={styles.dangerCard}>
+        {/* Settings */}
+        <Card style={[styles.formCard, { backgroundColor: colors.card, marginBottom: 16 }]}>
+          <Card.Content>
+            <Text variant="titleMedium" style={{ fontWeight: 'bold', color: colors.text, marginBottom: 12 }}>
+              Configuracoes
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ color: colors.text }}>Modo Escuro</Text>
+              <Switch value={isDark} onValueChange={toggleTheme} color={colors.primary} />
+            </View>
+          </Card.Content>
+        </Card>
+
+        <Card style={[styles.dangerCard, { backgroundColor: colors.card }]}>
           <Card.Content>
             <Text variant="titleMedium" style={styles.dangerTitle}>
               Zona de Perigo
