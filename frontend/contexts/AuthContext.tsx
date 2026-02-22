@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<{ user_type: string }> => {
     try {
       const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
@@ -76,8 +76,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('✅ User data saved to storage:', userData);
 
-      // Fetch full profile
-      await fetchProfile(access_token, user_type);
+      // Fetch full profile in background (don't block login)
+      fetchProfile(access_token, user_type).catch(err => 
+        console.error('Background profile fetch error:', err)
+      );
+
+      return { user_type };
     } catch (error: any) {
       console.error('Login error:', error.response?.data || error.message);
       throw new Error(error.response?.data?.detail || 'Login failed');
