@@ -124,8 +124,19 @@ export default function MentorProfile() {
               </Text>
             </View>
             <Text variant="bodyMedium" style={styles.botStatusText}>
-              Seu bot de IA está ativo e operando com o perfil mais recente.
+              Seu bot de IA está ativo e operando com o perfil abaixo.
             </Text>
+            
+            {profile?.agent_profile && (
+              <View style={styles.activeProfileBox}>
+                <Text variant="labelLarge" style={styles.activeProfileLabel}>
+                  Perfil em Uso:
+                </Text>
+                <Text variant="bodySmall" style={styles.activeProfileText}>
+                  {profile.agent_profile}
+                </Text>
+              </View>
+            )}
           </Card.Content>
         </Card>
       );
