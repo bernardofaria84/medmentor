@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
-import { Text, Button, Avatar, Surface, Divider, List } from 'react-native-paper';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text, Button, Avatar, Surface, Divider, List, Portal, Dialog, Paragraph } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserProfile } from '../../services/api';
