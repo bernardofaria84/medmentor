@@ -744,7 +744,7 @@ async def chat_with_mentor(
             question_embedding, 
             chunk_embeddings, 
             top_k=5,
-            min_similarity=0.3  # Minimum 30% similarity required
+            min_similarity=0.45  # Minimum 45% similarity required (increased from 30% to reduce hallucinations)
         )
         
         # Check if we have relevant chunks

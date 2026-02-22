@@ -82,7 +82,7 @@ class MultiAIRAGService:
         query_embedding: List[float], 
         document_embeddings: List[List[float]], 
         top_k: int = 5,
-        min_similarity: float = 0.3  # Minimum similarity threshold
+        min_similarity: float = 0.45  # Minimum similarity threshold (45% for better quality)
     ) -> Tuple[List[int], List[float]]:
         """
         Find top k most similar documents using cosine similarity
