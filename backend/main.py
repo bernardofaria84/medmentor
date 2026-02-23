@@ -59,6 +59,4 @@ app.include_router(api_router)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    c = get_client()
-    if c:
-        c.close()
+    close_db()
