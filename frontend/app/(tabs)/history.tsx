@@ -256,7 +256,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
+  headerSection: {
+    flexShrink: 0,
+    paddingBottom: 4,
+  },
+  listSection: {
     flex: 1,
   },
   loadingContainer: {
@@ -277,9 +281,13 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minHeight: 40,
   },
+  filterRowContent: {
+    alignItems: 'center',
+    paddingRight: 16,
+  },
   filterChip: {
     marginRight: 8,
-    height: 32,
+    height: 34,
   },
   scrollContent: {
     padding: 16,
