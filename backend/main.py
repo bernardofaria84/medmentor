@@ -6,7 +6,7 @@ from datetime import datetime
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 
-from dependencies import db, client, logger
+from dependencies import db, get_client, logger
 
 # Services (initialized once)
 from multi_ai_rag_service import MultiAIRAGService
@@ -59,4 +59,6 @@ app.include_router(api_router)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    c = get_client()
+    if c:
+        c.close()
