@@ -41,12 +41,12 @@ load_dotenv(ROOT_DIR / '.env')
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ.get('DB_NAME', 'medmentor_db')]
+db = client[os.environ['DB_NAME']]
 
 # Create a synchronous client for GridFS (GridFS doesn't support async yet)
 from pymongo import MongoClient
 sync_client = MongoClient(mongo_url)
-sync_db = sync_client[os.environ.get('DB_NAME', 'medmentor_db')]
+sync_db = sync_client[os.environ['DB_NAME']]
 fs = gridfs.GridFS(sync_db)
 
 # Create the main app
