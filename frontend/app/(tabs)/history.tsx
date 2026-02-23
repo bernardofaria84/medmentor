@@ -275,19 +275,14 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   filterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: 16,
     marginBottom: 8,
-    flexGrow: 0,
-    flexShrink: 0,
-    minHeight: 40,
-  },
-  filterRowContent: {
-    alignItems: 'center',
-    paddingRight: 16,
   },
   filterChip: {
     marginRight: 8,
-    height: 34,
+    marginBottom: 4,
   },
   scrollContent: {
     padding: 16,
