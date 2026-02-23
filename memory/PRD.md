@@ -1,72 +1,92 @@
 # MedMentor v2.0 - Product Requirements Document
 
-## Original Problem Statement
-MedMentor is a medical mentoring platform powered by AI. It connects specialist doctors (mentors) with healthcare professionals (subscribers) through intelligent bots that learn from each mentor's exclusive content.
+## Problema Original
+O MedMentor e uma plataforma de mentoria medica com IA que conecta estudantes e profissionais de saude a mentores especializados. A plataforma utiliza RAG (Retrieval-Augmented Generation) para fornecer respostas baseadas no conteudo do mentor.
 
-## Core Architecture
-- **Frontend**: React Native (Expo) with Expo Router, React Native Paper
-- **Backend**: FastAPI + MongoDB
-- **AI/RAG**: Multi-AI RAG with OpenAI GPT-3.5 Turbo + Anthropic Claude fallback
-- **Speech-to-Text**: Web Speech API (browser-based)
+## Arquitetura
 
-## What's Been Implemented
+### Backend (FastAPI + MongoDB)
+```
+backend/
+├── main.py                 # Entry point da aplicacao
+├── dependencies.py         # Dependencias compartilhadas (DB, GridFS, Logger)
+├── models.py               # Modelos Pydantic
+├── pytest.ini              # Configuracao do pytest
+├── routers/
+│   ├── auth.py             # Autenticacao (signup, login)
+│   ├── users.py            # Perfil de usuario
+│   ├── mentors.py          # Listagem, perfil, conteudo de mentores
+│   ├── chat.py             # Chat, conversas, SOAP, busca, feedback
+│   └── analytics.py        # Impactometro e analytics
+├── tests/
+│   ├── conftest.py         # Fixtures compartilhadas
+│   ├── test_auth.py        # Testes de autenticacao
+│   ├── test_users.py       # Testes de perfil de usuario
+│   ├── test_mentors.py     # Testes de mentores e conteudo
+│   ├── test_chat.py        # Testes de chat, conversas, feedback
+│   └── test_analytics.py   # Testes de analytics
+├── multi_ai_rag_service.py
+├── mentor_profile_service.py
+├── anonymization_service.py
+└── exceptions.py
+```
 
-### Phase 1: Core Features (Complete)
-- User authentication (JWT-based) for subscribers and mentors
-- Chat with AI mentors powered by RAG
-- SOAP Notes generation from conversations
-- Universal Semantic Search across all mentor knowledge bases
-- Audio-to-Text input (Web Speech API - web only)
-- Impactometer Dashboard for mentors
-- Human Validation of Bot Profile workflow
-- PII Anonymization (regex-based, replaced spaCy)
+### Frontend (React Native / Expo)
+```
+frontend/
+├── app/                    # Expo Router pages
+├── context/
+│   └── ThemeContext.tsx     # Dark/Light mode
+├── components/
+│   └── EmptyState.tsx      # Componente reutilizavel
+├── hooks/
+│   └── useAudioRecording.ts
+└── app.config.js           # Env vars para Expo builds
+```
 
-### Phase 2: 9-Point Improvement Plan (Complete - Feb 2026)
-1. **Mentor Onboarding** - Guided 3-step flow for new mentors (MentorOnboarding.tsx)
-2. **Empty States** - Reusable EmptyState component across all screens
-3. **About + Terms of Use** - Full about page with features, terms, and privacy policy
-4. **Form Validation** - Password strength indicator, email format check, required field validation
-5. **SOAP PDF Export** - Export SOAP notes as PDF via browser print dialog
-6. **History with Filters** - Date filters (Today/Week/Month) and mentor-based filtering
-7. **Dark Mode** - Manual toggle with AsyncStorage persistence via ThemeContext
-8. **Animations** - Splash screen transition with branded loading animation
-9. **Custom Splash Screen** - Branded splash with stethoscope icon and MedMentor branding
+## O que foi implementado
 
-## Key Screens
-- Login/Signup (auth flow with validation)
-- Home (search, recent conversations, mentor list)
-- Chat (real-time AI conversation with voice input)
-- Conversation detail (SOAP generation + PDF export)
-- History (filtered conversation list)
-- Profile (dark mode toggle, about/terms links)
-- About (app info, features, terms, privacy)
-- Mentor Dashboard (Impactometer with KPIs, charts, topics)
-- Mentor Profile (bot approval, settings, dark mode)
-- Mentor Onboarding (3-step guided setup)
+### Sessao Atual (Fev 2026)
+- [x] Correcao do setup pytest (erro "Event loop is closed")
+  - Reescrito `dependencies.py` com _DBProxy e lazy init
+  - Reescrito `conftest.py` com fixtures async corretas
+  - Configurado `asyncio_default_test_loop_scope = session` no pytest.ini
+  - Corrigido `main.py` (AnonymizationService como instancia)
+- [x] Suite completa de testes automatizados
+  - 75 testes passando em 5 arquivos
+  - Cobertura total: 70%
+  - auth.py: 98%, analytics.py: 90%, users.py: 94%, mentors.py: 69%, chat.py: 55%
 
-## Known Issues
-- **Native Audio Transcription (P2)**: Audio-to-text only works on web (Web Speech API). Native mobile path (iOS/Android) is non-functional as it references a broken `/api/transcribe` endpoint.
-- **Expo Tunnel Instability**: ngrok tunnel has intermittent connectivity issues. Using `--web` mode for stable preview. For deployment, tunnel mode should be used when ngrok is stable.
+### Sessoes Anteriores
+- [x] Refatoracao do backend monolitico → modular (routers/)
+- [x] Plano de 9 pontos UI/UX (Splash, Dark Mode, Empty States, About, Validacao, PDF, Filtros)
+- [x] Deploy readiness (otimizacao queries, env vars)
+- [x] Estabilidade do tunnel ngrok
 
-## Deployment Readiness (Feb 2026)
-- Backend: All endpoints optimized with DB projections and limits
-- Frontend: app.config.js created to expose env vars properly
-- Dependencies: Removed dead spaCy packages from requirements.txt
-- DB_NAME: Uses os.environ['DB_NAME'] directly (no fallback)
-- Mentor list: Excludes password_hash via projection
+## Integracoes
+- OpenAI GPT-3.5-turbo (RAG)
+- OpenAI Embeddings
+- Anthropic Claude Sonnet
+- Web Speech API
+- jspdf / html2canvas (PDF)
 
-## Database Schema
-- **users**: id, email, full_name, crm, specialty, user_type
-- **mentors**: id, email, full_name, specialty, bio, agent_profile, agent_profile_pending, profile_status
-- **conversations**: id, user_id, mentor_id, title, messages, created_at, updated_at
-- **content**: id, mentor_id, title, content_type, file_url, embeddings
+## Backlog
+- [ ] P1: Corrigir audio-to-text nativo (iOS/Android)
+- [ ] P2: Aumentar cobertura de testes (chat flow completo com mocking)
+- [ ] P3: Migrar `on_event` para `lifespan` handlers (FastAPI deprecation)
+- [ ] P3: Corrigir `.dict()` → `.model_dump()` (Pydantic v2 deprecation)
 
-## Key API Endpoints
-- POST /api/auth/login, /api/auth/signup
-- GET /api/mentors, /api/mentors/profile/me
-- POST /api/chat
-- GET /api/conversations, /api/conversations/:id/messages
-- POST /api/conversations/:id/summarize (SOAP)
+## Endpoints Principais
+- POST /api/auth/signup, /api/auth/login, /api/auth/mentor/signup, /api/auth/mentor/login
+- GET/PUT /api/users/profile
+- GET /api/mentors, /api/mentors/{id}
+- POST /api/chat, GET /api/conversations, /api/conversations/{id}/messages
+- POST /api/conversations/{id}/summarize
+- POST /api/messages/{id}/feedback
 - GET /api/search/universal
-- POST /api/mentor/impactometer
-- POST /api/mentors/profile/approve
+- GET /api/mentor/impactometer, /api/mentor/stats
+- GET /api/mentor/analytics/queries, /ratings, /content, /feedback-details
+- GET/DELETE /api/mentor/content/{id}, POST /api/mentor/content/bulk-delete
+
+## Credenciais de Teste
+- Email: teste@teste.com / Senha: 123456
