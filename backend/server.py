@@ -839,7 +839,7 @@ async def get_impactometer(current_user: dict = Depends(get_current_user)):
     
     # 1. Get all conversations for this mentor
     conversations = await db.conversations.find(
-        {"mentor_id": mentor_id}
+        {"mentor_id": mentor_id}, {"_id": 1}
     ).to_list(1000)
     conversation_ids = [c["_id"] for c in conversations]
     
@@ -847,13 +847,13 @@ async def get_impactometer(current_user: dict = Depends(get_current_user)):
     bot_messages = await db.messages.find({
         "conversation_id": {"$in": conversation_ids},
         "sender_type": SenderType.MENTOR_BOT
-    }).sort("sent_at", -1).to_list(5000)
+    }, {"sent_at": 1, "feedback": 1}).sort("sent_at", -1).to_list(5000)
     
     # 3. Get all user messages
     user_messages = await db.messages.find({
         "conversation_id": {"$in": conversation_ids},
         "sender_type": SenderType.USER
-    }).sort("sent_at", -1).to_list(5000)
+    }, {"sent_at": 1, "content": 1}).sort("sent_at", -1).to_list(5000)
     
     # 4. Queries per day (last 30 days)
     from collections import defaultdict
