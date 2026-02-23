@@ -142,9 +142,8 @@ class TestChat:
 class TestFeedback:
     async def test_feedback_nonexistent_message(self, async_client: AsyncClient, registered_user):
         resp = await async_client.post(
-            "/api/messages/nonexistent/feedback",
+            "/api/messages/nonexistent/feedback?feedback=LIKE",
             headers=auth_header(registered_user["token"]),
-            json={"feedback": "LIKE"},
         )
         assert resp.status_code == 404
 
