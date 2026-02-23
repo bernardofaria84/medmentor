@@ -23,7 +23,7 @@ export default function MentorLoginScreen() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email, password, 'mentor');
       router.replace('/(mentor)/dashboard');
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login');
