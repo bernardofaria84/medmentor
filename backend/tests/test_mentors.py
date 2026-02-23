@@ -10,8 +10,6 @@ class TestMentorListing:
     async def test_list_mentors_empty(self, async_client: AsyncClient, registered_user):
         resp = await async_client.get("/api/mentors", headers=auth_header(registered_user["token"]))
         assert resp.status_code == 200
-        # Only the mentor from registered_user fixture is not a mentor, so list should be empty
-        # unless registered_mentor fixture is used
         data = resp.json()
         assert isinstance(data, list)
 
@@ -31,6 +29,17 @@ class TestMentorListing:
     async def test_list_mentors_requires_auth(self, async_client: AsyncClient):
         resp = await async_client.get("/api/mentors")
         assert resp.status_code in [401, 403]
+
+    async def test_get_mentor_by_id(self, async_client: AsyncClient, registered_user, registered_mentor):
+        resp = await async_client.get(f"/api/mentors/{registered_mentor['user_id']}", headers=auth_header(registered_user["token"]))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["full_name"] == "Dr. Mentor Teste"
+        assert data["specialty"] == "Cardiologia"
+
+    async def test_get_mentor_by_id_not_found(self, async_client: AsyncClient, registered_user):
+        resp = await async_client.get("/api/mentors/nonexistent-id", headers=auth_header(registered_user["token"]))
+        assert resp.status_code == 404
 
 
 @pytest.mark.asyncio
