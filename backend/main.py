@@ -11,10 +11,11 @@ from dependencies import db, close_db, logger
 # Services (initialized once)
 from multi_ai_rag_service import MultiAIRAGService
 from mentor_profile_service import MentorProfileService
-import anonymization_service
+from anonymization_service import AnonymizationService
 
 multi_ai_rag_service = MultiAIRAGService()
 mentor_profile_service = MentorProfileService()
+anonymization_svc = AnonymizationService()
 
 # Import routers
 from routers import auth, users, mentors, chat, analytics
