@@ -110,7 +110,8 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
-      <View style={styles.content}>
+      {/* Fixed header: search + filters */}
+      <View style={styles.headerSection}>
         <Searchbar
           placeholder="Buscar conversas..."
           onChangeText={setSearchQuery}
@@ -122,7 +123,7 @@ export default function HistoryScreen() {
         />
 
         {/* Date Filters */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
           {([
             { key: 'all', label: 'Todas' },
             { key: 'today', label: 'Hoje' },
@@ -152,7 +153,7 @@ export default function HistoryScreen() {
 
         {/* Mentor Filters */}
         {mentorNames.length > 1 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
             <Chip
               selected={!mentorFilter}
               onPress={() => setMentorFilter(null)}
@@ -185,7 +186,10 @@ export default function HistoryScreen() {
             ))}
           </ScrollView>
         )}
+      </View>
 
+      {/* Scrollable conversation list */}
+      <View style={styles.listSection}>
         {filteredConversations.length === 0 ? (
           conversations.length === 0 ? (
             <EmptyState
