@@ -186,8 +186,8 @@ class TestSOAP:
         })
         await db.messages.insert_one({
             "_id": str(uuid.uuid4()), "conversation_id": conv_id,
-            "sender_type": "user", "content": "Oi",
-            "citations": [], "feedback": "none", "sent_at": now,
+            "sender_type": "USER", "content": "Oi",
+            "citations": [], "feedback": "NONE", "sent_at": now,
         })
         resp = await async_client.post(f"/api/conversations/{conv_id}/summarize", headers=auth_header(registered_user["token"]))
         assert resp.status_code == 400
