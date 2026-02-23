@@ -46,7 +46,14 @@ MedMentor is a medical mentoring platform powered by AI. It connects specialist 
 
 ## Known Issues
 - **Native Audio Transcription (P2)**: Audio-to-text only works on web (Web Speech API). Native mobile path (iOS/Android) is non-functional as it references a broken `/api/transcribe` endpoint.
-- **Expo Tunnel Instability**: ngrok tunnel connection is intermittent. Changed to `--web` mode for stability.
+- **Expo Tunnel Instability**: ngrok tunnel has intermittent connectivity issues. Using `--web` mode for stable preview. For deployment, tunnel mode should be used when ngrok is stable.
+
+## Deployment Readiness (Feb 2026)
+- Backend: All endpoints optimized with DB projections and limits
+- Frontend: app.config.js created to expose env vars properly
+- Dependencies: Removed dead spaCy packages from requirements.txt
+- DB_NAME: Uses os.environ['DB_NAME'] directly (no fallback)
+- Mentor list: Excludes password_hash via projection
 
 ## Database Schema
 - **users**: id, email, full_name, crm, specialty, user_type
