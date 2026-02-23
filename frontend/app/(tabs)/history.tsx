@@ -123,7 +123,7 @@ export default function HistoryScreen() {
         />
 
         {/* Date Filters */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
+        <View style={styles.filterRow}>
           {([
             { key: 'all', label: 'Todas' },
             { key: 'today', label: 'Hoje' },
@@ -149,11 +149,11 @@ export default function HistoryScreen() {
               {f.label}
             </Chip>
           ))}
-        </ScrollView>
+        </View>
 
         {/* Mentor Filters */}
         {mentorNames.length > 1 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
+          <View style={styles.filterRow}>
             <Chip
               selected={!mentorFilter}
               onPress={() => setMentorFilter(null)}
@@ -184,7 +184,7 @@ export default function HistoryScreen() {
                 {name}
               </Chip>
             ))}
-          </ScrollView>
+          </View>
         )}
       </View>
 
