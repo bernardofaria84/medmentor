@@ -16,7 +16,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ user_type: string }>;
+  login: (email: string, password: string, userType?: 'user' | 'mentor') => Promise<{ user_type: string }>;
   signup: (email: string, password: string, fullName: string, crm: string, specialty?: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -51,9 +51,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = async (email: string, password: string): Promise<{ user_type: string }> => {
+  const login = async (email: string, password: string, userType: 'user' | 'mentor' = 'user'): Promise<{ user_type: string }> => {
     try {
-      const response = await axios.post(`${API_URL}/api/auth/login`, {
+      const endpoint = userType === 'mentor' ? '/api/auth/mentor/login' : '/api/auth/login';
+      const response = await axios.post(`${API_URL}${endpoint}`, {
         email,
         password
       });
