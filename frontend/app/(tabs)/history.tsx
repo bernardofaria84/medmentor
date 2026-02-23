@@ -284,6 +284,11 @@ const styles = StyleSheet.create({
   filterChip: {
     marginRight: 8,
     marginBottom: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrollContent: {
     padding: 16,
