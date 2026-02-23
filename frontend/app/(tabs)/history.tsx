@@ -130,9 +130,8 @@ export default function HistoryScreen() {
             { key: 'week', label: 'Semana' },
             { key: 'month', label: 'Mes' },
           ] as { key: DateFilter; label: string }[]).map(f => (
-            <Chip
+            <Pressable
               key={f.key}
-              selected={dateFilter === f.key}
               onPress={() => setDateFilter(f.key)}
               style={[
                 styles.filterChip,
@@ -140,22 +139,23 @@ export default function HistoryScreen() {
                   ? { backgroundColor: colors.primary }
                   : { backgroundColor: colors.surfaceVariant },
               ]}
-              textStyle={{
-                color: dateFilter === f.key ? '#ffffff' : colors.textSecondary,
-                fontSize: 13,
-              }}
               data-testid={`filter-date-${f.key}`}
             >
-              {f.label}
-            </Chip>
+              <Text style={{
+                color: dateFilter === f.key ? '#ffffff' : colors.textSecondary,
+                fontSize: 13,
+                fontWeight: dateFilter === f.key ? '600' : '400',
+              }}>
+                {f.label}
+              </Text>
+            </Pressable>
           ))}
         </View>
 
         {/* Mentor Filters */}
         {mentorNames.length > 1 && (
           <View style={styles.filterRow}>
-            <Chip
-              selected={!mentorFilter}
+            <Pressable
               onPress={() => setMentorFilter(null)}
               style={[
                 styles.filterChip,
@@ -163,14 +163,14 @@ export default function HistoryScreen() {
                   ? { backgroundColor: colors.primary }
                   : { backgroundColor: colors.surfaceVariant },
               ]}
-              textStyle={{ color: !mentorFilter ? '#ffffff' : colors.textSecondary, fontSize: 13 }}
             >
-              Todos Mentores
-            </Chip>
+              <Text style={{ color: !mentorFilter ? '#ffffff' : colors.textSecondary, fontSize: 13, fontWeight: !mentorFilter ? '600' : '400' }}>
+                Todos Mentores
+              </Text>
+            </Pressable>
             {mentorNames.map(name => (
-              <Chip
+              <Pressable
                 key={name}
-                selected={mentorFilter === name}
                 onPress={() => setMentorFilter(mentorFilter === name ? null : name)}
                 style={[
                   styles.filterChip,
@@ -178,11 +178,12 @@ export default function HistoryScreen() {
                     ? { backgroundColor: colors.primary }
                     : { backgroundColor: colors.surfaceVariant },
                 ]}
-                textStyle={{ color: mentorFilter === name ? '#ffffff' : colors.textSecondary, fontSize: 13 }}
                 data-testid={`filter-mentor-${name}`}
               >
-                {name}
-              </Chip>
+                <Text style={{ color: mentorFilter === name ? '#ffffff' : colors.textSecondary, fontSize: 13, fontWeight: mentorFilter === name ? '600' : '400' }}>
+                  {name}
+                </Text>
+              </Pressable>
             ))}
           </View>
         )}
