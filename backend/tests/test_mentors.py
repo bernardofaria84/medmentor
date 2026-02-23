@@ -1,5 +1,7 @@
 """Tests for mentor-related endpoints."""
+import uuid
 import pytest
+from datetime import datetime
 from httpx import AsyncClient
 from tests.conftest import auth_header
 from dependencies import db
