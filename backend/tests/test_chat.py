@@ -30,7 +30,7 @@ class TestConversations:
         await db.messages.insert_one({
             "_id": msg_id, "conversation_id": conv_id,
             "sender_type": "mentor_bot", "content": "Hello world",
-            "citations": [], "feedback": "none", "sent_at": now,
+            "citations": [], "feedback": "NONE", "sent_at": now,
         })
         resp = await async_client.get("/api/conversations", headers=auth_header(registered_user["token"]))
         assert resp.status_code == 200
@@ -56,14 +56,14 @@ class TestConversationMessages:
         })
         await db.messages.insert_one({
             "_id": str(uuid.uuid4()), "conversation_id": conv_id,
-            "sender_type": "user", "content": "Qual o tratamento?",
-            "citations": [], "feedback": "none", "sent_at": now,
+            "sender_type": "USER", "content": "Qual o tratamento?",
+            "citations": [], "feedback": "NONE", "sent_at": now,
         })
         await db.messages.insert_one({
             "_id": str(uuid.uuid4()), "conversation_id": conv_id,
-            "sender_type": "mentor_bot", "content": "O tratamento envolve [PACIENTE_1] ...",
+            "sender_type": "MENTOR_BOT", "content": "O tratamento envolve [PACIENTE_1] ...",
             "citations": [{"source_id": "1", "title": "Artigo", "text": "trecho"}],
-            "feedback": "none", "sent_at": now,
+            "feedback": "NONE", "sent_at": now,
         })
         resp = await async_client.get(f"/api/conversations/{conv_id}/messages", headers=auth_header(registered_user["token"]))
         assert resp.status_code == 200
@@ -142,8 +142,9 @@ class TestChat:
 class TestFeedback:
     async def test_feedback_nonexistent_message(self, async_client: AsyncClient, registered_user):
         resp = await async_client.post(
-            "/api/messages/nonexistent/feedback?feedback=like",
+            "/api/messages/nonexistent/feedback",
             headers=auth_header(registered_user["token"]),
+            json={"feedback": "LIKE"},
         )
         assert resp.status_code == 404
 
@@ -158,11 +159,11 @@ class TestFeedback:
         })
         await db.messages.insert_one({
             "_id": msg_id, "conversation_id": conv_id,
-            "sender_type": "mentor_bot", "content": "Bot response",
-            "citations": [], "feedback": "none", "sent_at": now,
+            "sender_type": "MENTOR_BOT", "content": "Bot response",
+            "citations": [], "feedback": "NONE", "sent_at": now,
         })
         resp = await async_client.post(
-            f"/api/messages/{msg_id}/feedback?feedback=like",
+            f"/api/messages/{msg_id}/feedback?feedback=LIKE",
             headers=auth_header(registered_user["token"]),
         )
         assert resp.status_code == 200
