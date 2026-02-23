@@ -22,7 +22,7 @@ from routers import auth, users, mentors, chat, analytics
 
 # Inject shared services into routers that need them
 mentors._init_services(multi_ai_rag_service, mentor_profile_service)
-chat._init_services(multi_ai_rag_service, mentor_profile_service, anonymization_service)
+chat._init_services(multi_ai_rag_service, mentor_profile_service, anonymization_svc)
 
 # FastAPI app
 app = FastAPI(title="MedMentor API", version="2.0.0")
