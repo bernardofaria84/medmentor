@@ -253,7 +253,7 @@ async def update_user_profile(
 async def list_mentors():
     """Get all mentors"""
     
-    mentors = await db.mentors.find().to_list(100)
+    mentors = await db.mentors.find({}, {"_id": 1, "full_name": 1, "specialty": 1, "avatar_url": 1, "bio": 1}).to_list(100)
     
     return [
         MentorListItem(
@@ -681,7 +681,7 @@ async def get_mentor_stats(current_user: dict = Depends(get_current_user)):
     
     # Count total queries (messages from bot)
     conversations = await db.conversations.find(
-        {"mentor_id": current_user["user_id"]}
+        {"mentor_id": current_user["user_id"]}, {"_id": 1}
     ).to_list(1000)
     
     conversation_ids = [c["_id"] for c in conversations]
@@ -702,7 +702,7 @@ async def get_mentor_stats(current_user: dict = Depends(get_current_user)):
         "conversation_id": {"$in": conversation_ids},
         "sender_type": SenderType.MENTOR_BOT,
         "feedback": {"$ne": FeedbackType.NONE}
-    }).to_list(1000)
+    }, {"feedback": 1}).to_list(1000)
     
     if messages_with_feedback:
         likes = sum(1 for m in messages_with_feedback if m["feedback"] == FeedbackType.LIKE)
@@ -742,8 +742,9 @@ async def universal_search(
         
         # 2. Get ALL mentor content with chunks
         all_content = await db.mentor_content.find(
-            {"status": ContentStatus.COMPLETED}
-        ).to_list(1000)
+            {"status": ContentStatus.COMPLETED},
+            {"mentor_id": 1, "filename": 1, "chunks": 1}
+        ).limit(100).to_list(100)
         
         if not all_content:
             return {"results": [], "query": query, "total_results": 0}
@@ -1046,7 +1047,7 @@ async def chat_with_mentor(
     # Search for relevant content chunks
     chunks = await db.content_chunks.find({
         "mentor_id": chat_request.mentor_id
-    }).to_list(1000)
+    }, {"embedding": 1, "text": 1, "content_id": 1, "title": 1}).limit(500).to_list(500)
     
     if not chunks:
         # No content available for this mentor - NEVER call AI
