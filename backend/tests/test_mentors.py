@@ -129,3 +129,78 @@ class TestMentorStats:
     async def test_user_cannot_get_stats(self, async_client: AsyncClient, registered_user):
         resp = await async_client.get("/api/mentor/stats", headers=auth_header(registered_user["token"]))
         assert resp.status_code == 403
+
+
+
+@pytest.mark.asyncio
+class TestContentManagement:
+    async def _insert_content(self, mentor_id):
+        content_id = str(uuid.uuid4())
+        now = datetime.utcnow()
+        await db.mentor_content.insert_one({
+            "_id": content_id, "mentor_id": mentor_id,
+            "title": "Artigo Teste", "content_type": "text",
+            "status": "COMPLETED", "uploaded_at": now,
+            "processed_text": "Texto processado de exemplo.",
+        })
+        chunk_id = str(uuid.uuid4())
+        await db.content_chunks.insert_one({
+            "_id": chunk_id, "content_id": content_id,
+            "text": "Chunk de texto", "embedding": [0.1] * 10,
+        })
+        return content_id
+
+    async def test_get_content_details(self, async_client: AsyncClient, registered_mentor):
+        cid = await self._insert_content(registered_mentor["user_id"])
+        resp = await async_client.get(f"/api/mentor/content/{cid}", headers=auth_header(registered_mentor["token"]))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["title"] == "Artigo Teste"
+        assert data["chunk_count"] == 1
+
+    async def test_get_content_details_not_found(self, async_client: AsyncClient, registered_mentor):
+        resp = await async_client.get("/api/mentor/content/nonexistent", headers=auth_header(registered_mentor["token"]))
+        assert resp.status_code == 404
+
+    async def test_user_cannot_view_content(self, async_client: AsyncClient, registered_user):
+        resp = await async_client.get("/api/mentor/content/any-id", headers=auth_header(registered_user["token"]))
+        assert resp.status_code == 403
+
+    async def test_delete_content(self, async_client: AsyncClient, registered_mentor):
+        cid = await self._insert_content(registered_mentor["user_id"])
+        resp = await async_client.delete(f"/api/mentor/content/{cid}", headers=auth_header(registered_mentor["token"]))
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["deleted_chunks"] == 1
+        # Verify it's gone
+        resp2 = await async_client.get(f"/api/mentor/content/{cid}", headers=auth_header(registered_mentor["token"]))
+        assert resp2.status_code == 404
+
+    async def test_delete_content_not_found(self, async_client: AsyncClient, registered_mentor):
+        resp = await async_client.delete("/api/mentor/content/nonexistent", headers=auth_header(registered_mentor["token"]))
+        assert resp.status_code == 404
+
+    async def test_user_cannot_delete_content(self, async_client: AsyncClient, registered_user):
+        resp = await async_client.delete("/api/mentor/content/any-id", headers=auth_header(registered_user["token"]))
+        assert resp.status_code == 403
+
+    async def test_bulk_delete(self, async_client: AsyncClient, registered_mentor):
+        cid1 = await self._insert_content(registered_mentor["user_id"])
+        cid2 = await self._insert_content(registered_mentor["user_id"])
+        resp = await async_client.post(
+            "/api/mentor/content/bulk-delete",
+            headers=auth_header(registered_mentor["token"]),
+            json=[cid1, cid2],
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["deleted_contents"] == 2
+        assert data["deleted_chunks"] == 2
+
+    async def test_user_cannot_bulk_delete(self, async_client: AsyncClient, registered_user):
+        resp = await async_client.post(
+            "/api/mentor/content/bulk-delete",
+            headers=auth_header(registered_user["token"]),
+            json=["some-id"],
+        )
+        assert resp.status_code == 403
