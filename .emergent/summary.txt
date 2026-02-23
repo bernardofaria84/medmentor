@@ -1,240 +1,197 @@
-<analysis>
+<analysis>**original_problem_statement**: The user initially requested the completion of documentation and scripts for the MedMentor application. This evolved into implementing a detailed product requirements document (PRD) for MedMentor v2.0, followed by a 9-point UI/UX enhancement plan. Most recently, the user provided a markdown document with two main strategic tasks: refactoring the entire backend for modularity and implementing a robust suite of automated tests using ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: asyncio-1.3.0, anyio-4.11.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 0 items
 
-**original_problem_statement**: The user initially requested the completion of documentation and scripts for the MedMentor application. Subsequently, the user provided a detailed product requirements document (PRD) for MedMentor v2.0 and a later a markdown file with 4 strategic improvements. The agent has now been tasked with implementing a 9-point list of UI/UX and feature enhancements.
-
-**PRODUCT REQUIREMENTS (MedMentor v2.0 - Partially Implemented/Superseded)**
-
-**Phase 1: Subscriber Superpowers**
-*   **1.1. Automatic Case Summary (SOAP Notes):** (Implemented)
-*   **1.2. Universal Semantic Search:** (Implemented)
-*   **1.3. Audio-to-Text Input:** (Implemented, with caveats)
-
-**Phase 2: Mentor Gamification & Engagement**
-*   **2.1. Impactometer Dashboard:** (Implemented)
-*   **2.2. Critical Response Validation:** (Superseded by Human Validation of Bot Profile feature)
-
-**Phase 3: UI/UX Polish**
-*   (Superseded by the new 9-point plan)
+============================ no tests ran in 0.02s =============================.
 
 **User's preferred language**: Portuguese (Brazil). The next agent MUST respond in Portuguese.
 
 **what currently exists?**
-A full-stack MedMentor application with a React Native (Expo) frontend and a FastAPI backend. All major features from the original PRD have been implemented, including SOAP Notes, Universal Semantic Search, Audio-to-Text (web-only), and the Impactometer Dashboard.
+A full-stack MedMentor application with a React Native (Expo) frontend and a newly refactored FastAPI backend.
 
-Key features completed in the last session:
-- **Audio-to-Text:** A microphone button in the chat uses the browser's Web Speech API for transcription, avoiding backend dependencies for web. The original implementation using OpenAI Whisper was deprecated due to API key restrictions.
-- **Impactometer Dashboard:** A dynamic, real-time analytics dashboard for mentors featuring KPIs, charts for consultations, and a word cloud for hot topics.
-- **Universal Semantic Search:** A search bar on the user's home screen that queries across all mentor knowledge bases.
-- **Human Validation of Bot Profile:** A complete workflow for mentors to review and approve AI-generated bot personalities. The UI in the mentor's profile page allows viewing the pending and active profiles.
-- **RAG & AI Core Enhancements:** The RAG similarity threshold was increased, and a post-generation validation step was added to ensure response quality. The feedback mechanism was also enhanced for detailed logging.
-- **Bug Fixes:** Critical bugs related to user logout, login redirection, incorrect PII anonymization (), and stray RAG tags () have all been resolved. The heavy  dependency was successfully replaced with a lightweight regex solution.
+The agent has successfully completed two major initiatives in this session:
+1.  **9-Point UI/UX Improvement Plan:** All nine features, including a custom splash screen, dark mode with a manual toggle, empty states, about/terms pages, form validation, PDF export for SOAP notes, and history filters, have been implemented and are functional.
+2.  **Backend Refactoring:** The monolithic  file has been completely broken down into a modern, modular structure. The application logic is now organized into separate router files (, , , , ) inside a  directory, with a new  as the entry point. All endpoints were verified via  after the refactor.
+
+The agent also resolved all deployment-readiness issues found by the , including optimizing database queries to prevent data leaks and removing unused dependencies.
 
 **Last working item**:
-- **Last item agent was working**: The agent began implementing a new 9-point improvement plan requested by the user. It started with Task 1: Onboarding do Mentor and successfully created the initial file structure for this and the next few tasks.
+- **Last item agent was working**: The agent was working on the second major task from the user's latest request: implementing automated backend tests with ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: asyncio-1.3.0, anyio-4.11.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 0 items
+
+============================ no tests ran in 0.01s =============================. It ran into a recurring  error when trying to run tests that use the async  MongoDB client. The agent's last action was to attempt a lazy initialization pattern for the database connection in  and  to resolve this event loop conflict.
 - **Status**: IN PROGRESS
-- **Agent Testing Done**: N
-- **Which testing method agent to use?**: Frontend testing agent
+- **Agent Testing Done**: N (The test framework itself is broken)
+- **Which testing method agent to use?**: The main agent must fix the test environment by editing the Python files (, ) and running ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0 -- /root/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /app/frontend
+plugins: asyncio-1.3.0, anyio-4.11.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 0 items
+
+============================ no tests ran in 0.01s ============================= via  to validate the fix.
 - **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
-- **Issue 1: Native Audio-to-Text is non-functional (P0)**
-    - **Description**: The agent implemented a fix for audio transcription using the web-only Web Speech API after the backend endpoint  (using OpenAI Whisper) was found to be non-functional due to API key restrictions (). However, the code for native mobile apps in  still attempts to call this broken backend endpoint. This means the feature will fail silently or crash on iOS and Android.
-    - **Attempted fixes**: Web-only workaround was implemented. The native path was not fixed.
+- **Issue 1: ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: asyncio-1.3.0, anyio-4.11.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 0 items
+
+============================ no tests ran in 0.01s ============================= setup fails with Event loop is closed error (P0)**
+    - **Description**: The test suite cannot run due to an event loop conflict between  and the  driver. The MongoDB client is being initialized or closed outside the context of the test's event loop.
+    - **Attempted fixes**: Several modifications to  were attempted. The last attempt involved creating a lazy-loading mechanism for the database client in . The result of this last change is unknown.
     - **Next debug checklist**:
-        1. Decide on a strategy for native audio transcription. Options:
-            a. Find a cross-platform React Native library that does on-device or cloud-based speech-to-text.
-            b. If a User API key with Whisper access is available, debug and fix the  endpoint.
-            c. Use a different cloud transcription service.
-        2. Modify  to implement the chosen native solution within the  block for .
-    - **Why fix this issue and what will be achieved with the fix?**: This is a critical feature that is currently broken for mobile users. Fixing it will provide a consistent experience across all platforms.
+        1.  Execute ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0 -- /root/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /app/frontend
+plugins: asyncio-1.3.0, anyio-4.11.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 0 items
+
+============================ no tests ran in 0.01s ============================= in the  directory to check if the last fix was successful.
+        2.  If it fails, review . The current approach is problematic. A more standard and reliable pattern is to create an  session-scoped fixture that yields the  client, ensuring it lives for the entire test session within the correct loop.
+        3.  Refactor  to remove the complex lazy-loading logic if a simpler fixture-based approach is adopted. The application code should not be overly complicated just to accommodate tests.
+        4.  Update the test files (, ) to use the new, correctly scoped  fixtures.
+    - **Why fix this issue and what will be achieved with the fix?**: This is the final step of the user's current high-priority request. Fixing it will provide a stable, maintainable, and testable backend, which is critical for future development and deployment confidence.
+    - **Status**: IN PROGRESS
+    - **Is recurring issue?**: Y
+    - **Should Test frontend/backend/both after fix?**: Backend (by running the test suite)
+    - **Blocked on other issue**: None
+
+- **Issue 2: Native Audio-to-Text is non-functional (P1)**
+    - **Description**: This is a carry-over issue. The audio transcription feature for the native mobile app (iOS/Android) is broken because  calls a deprecated backend endpoint (). The web app works correctly as it uses the browser's Web Speech API.
+    - **Attempted fixes**: None in this session.
+    - **Next debug checklist**:
+        1.  Decide on a strategy for native transcription (e.g., use a React Native library for on-device speech-to-text, or fix the backend endpoint if a valid Whisper API key is available).
+        2.  Implement the chosen solution in the  block for  in .
+    - **Why fix this issue and what will be achieved with the fix?**: This will restore a critical feature for mobile users and ensure a consistent experience across all platforms.
     - **Status**: NOT STARTED
-    - **Is recurring issue?**: N
+    - **Is recurring issue?**: Y
     - **Should Test frontend/backend/both after fix?**: Frontend (on a device/emulator)
     - **Blocked on other issue**: None.
 
 **In progress Task List**:
-- **Task 1: Implement 9-point Improvement Plan (P0)**
-    - **Description**: The user has approved a list of 9 specific enhancements. The agent has started by creating files for the first few items.
-    - **Where to resume**:
-        1. Implement the UI and logic for the newly created file .
-        2. Integrate this onboarding screen into the mentor's dashboard () to be shown conditionally if the mentor has no content uploaded.
-        3. Proceed to the next items on the 9-point list.
-    - **What will be achieved with this?**: This will significantly improve the app's UX, polish, and readiness for production.
+- **Task 1: Complete Automated Test Suite Implementation (P0)**
+    - **Description**: Finalize the setup of the ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: asyncio-1.3.0, anyio-4.11.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 0 items
+
+============================ no tests ran in 0.01s ============================= environment and ensure all created tests pass.
+    - **Where to resume**: Debugging the  error in the ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: asyncio-1.3.0, anyio-4.11.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 0 items
+
+============================ no tests ran in 0.01s ============================= setup, starting with .
+    - **What will be achieved with this?**: Fulfills the user's second major requirement, delivering a fully refactored and testable backend.
     - **Status**: IN PROGRESS
-    - **Should Test frontend/backend/both after fix?**: Frontend
-    - **Blocked on something**: None
+    - **Blocked on something**: Itself (the test framework needs to be fixed).
 
 **Upcoming and Future Tasks**
-The current task is to complete the user-approved 9-point plan. The items should be implemented in the specified order:
-1.  **(P0) Onboarding do Mentor:** A guided flow for new mentors to upload their first content. (In Progress)
-2.  **(P1) Tela de Erro e Estados Vazios:** Create friendly empty-state screens for when no data (content, conversations, etc.) is available.
-3.  **(P1) Tela Sobre + Termos de Uso:** Add an About screen and a Terms of Use page, essential for app store submission.
-4.  **(P2) Validação de formulários:** Enhance input validation for user registration (e.g., password strength).
-5.  **(P2) Exportar SOAP como PDF:** Allow users to download or share the generated SOAP notes as a PDF file.
-6.  **(P2) Histórico de Conversas com Filtros:** Add search and filter capabilities (by date, mentor) to the conversation history screen.
-7.  **(P3) Modo Escuro:** Implement a dark theme for the entire application.
-8.  **(P3) Animações e Transições:** Add micro-interactions and animations for better visual feedback.
-9.  **(P3) Splash Screen personalizada:** Create a custom branded splash screen for app launch.
+- **(P1) Native Audio-to-Text:** Implement a working audio transcription solution for iOS/Android to fix the long-standing feature gap between web and mobile.
 
 **Completed work in this session**
-- **Feature: Impactometer Dashboard:** A dynamic analytics dashboard for mentors was created () with a new unified backend endpoint ().
-- **Feature: Audio-to-Text (Web):** Implemented microphone input in the chat using the browser's Web Speech API, replacing a non-functional OpenAI Whisper implementation.
-- **Feature: Universal Semantic Search:** Implemented a cross-mentor search feature on the home screen () with a new backend endpoint ().
-- **Feature: Human Validation of Bot Profile:** A full workflow for mentors to review and approve their bot's AI-generated personality was built, including backend logic ( in ) and frontend UI ().
-- **Critical Fix: Replaced :** The heavy  library for PII anonymization was replaced with a lightweight regex-based solution in , resolving a major deployment blocker.
-- **Bug Fix: Logout Flow:** The logout buttons for both subscribers and mentors were fixed by replacing  with a  Dialog component to work within the web preview's sandboxed iframe.
-- **Bug Fix: RAG & Anonymization Artifacts:** Corrected issues where  and  were leaking into user-facing text and SOAP notes.
-- **AI Core Enhancements:** Implemented four strategic improvements from a user-provided document, including increasing the RAG threshold, adding response validation, and enhancing the feedback loop.
-- **Infrastructure Stability:** Resolved persistent  and backend                          STOPPING  
-code-server                      STOPPED   Not started
-expo                             STOPPED   Feb 22 09:29 PM
-mongodb                          RUNNING   pid 121, uptime 0:00:09
-nginx-code-proxy                 RUNNING   pid 118, uptime 0:00:09
-supervisor>  conflicts, stabilizing the development environment.
+- **Backend Refactoring:** The monolithic  was successfully broken down into a modular architecture with a  entry point and multiple router files in .
+- **9-Point UI/UX Plan:** All nine user-requested features were fully implemented, including Dark Mode, PDF export, custom splash screen, and more.
+- **Deployment Readiness:** Resolved all  issues from the , including optimizing DB queries to prevent leaking  and correctly configuring environment variables for Expo builds via .
+- **Infrastructure Stability:** Fixed the unstable  tunnel by modifying the [03:47:09] Starting project at /app/frontend command, leading to a stable development environment.
 
 **Earlier issues found/mentioned but not fixed**
-- No outstanding issues from previous sessions remain. All have been addressed.
+- The issue of the non-functional native audio-to-text feature, carried over from the initial handoff, remains unresolved.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Backend:** FastAPI, Pydantic, MongoDB. Regex for PII anonymization.
-- **Frontend:** React Native, Expo, Expo Router, React Native Paper (for Dialogs),  (for Impactometer).
-- **AI/RAG:** Multi-AI RAG, post-generation validation, enhanced feedback logging.
-- **Speech-to-Text:** **Web Speech API** for browser-based transcription.  for native audio capture (but transcription is broken).
-
-**key DB schema**
-- **mentors**:
-    -  -> Stores the **active** AI personality profile.
-    -  -> Stores the newly generated profile awaiting approval.
-    -  -> Enum ('ACTIVE', 'PENDING_APPROVAL').
+- **Backend:** FastAPI (Modular with APIRouter), Pydantic, MongoDB, Motor (async driver), Pytest, pytest-asyncio.
+- **Frontend:** React Native, Expo, Expo Router,  for theming,  &  for PDF generation.
+- **Architecture:** Modular backend API using routers, Context-based theming on the frontend.
 
 **All files of reference**
-- : Central hub for all new business logic: search, impactometer, bot profile approval, response validation, and cleaning.
-- : Contains the complex UI for the bot profile approval workflow.
-- : The new Impactometer dashboard, a key feature for mentor engagement.
-- : Contains the critical but divergent logic for web vs. native audio transcription. **The native path is broken.**
-- : A key refactoring, this file now contains a lightweight regex-based PII remover.
-
-**Areas that need refactoring**:
-- The  hook needs to be refactored to provide a working solution for native mobile platforms, as it currently relies on a broken backend endpoint for non-web environments.
-
-**key api endpoints**
-- : (New) Unified endpoint for all mentor dashboard metrics.
-- : (New) Endpoint for the cross-mentor semantic search.
-- : (New) Endpoint for a mentor to approve a pending AI bot profile.
-- : (Effectively DEPRECATED) This endpoint using OpenAI Whisper is non-functional due to API key limitations in the environment.
-- : Modified to include RAG validation and output cleaning.
-- : Modified to log extended feedback details.
+- : The user's document defining the latest refactoring and testing tasks.
+- : The new, clean entry point for the backend application.
+- : Directory containing all the refactored API endpoints.
+- : The pytest configuration file that is the source of the current blocker.
+- : File for managing shared dependencies; was recently modified to debug the test issue.
+- : New, critical file for exposing environment variables to Expo builds.
+- : The heart of the new dark/light mode functionality.
 
 **Critical Info for New Agent**
-- **Audio Transcription Discrepancy:** The audio-to-text feature works on the web by using the browser's built-in Web Speech API. **It does NOT work on native mobile (iOS/Android)** because the native code path still points to the  endpoint, which fails due to OpenAI Whisper model access restrictions. This is the highest priority technical issue to resolve (see Pending/In progress Issue list).
-- **Development Environment:** The environment is sensitive to process management.  is unstable. The current working method is to run [21:29:10] Starting project at /app/frontend manually without tunneling and let the platform's proxy handle routing. You may need to kill zombie 
-  Usage: expo [command] [options]
+- **Pytest Blocker is Priority #1:** Your immediate task is to fix the ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: asyncio-1.3.0, anyio-4.11.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 0 items
 
-  Options:
-  
-    -V, --version                     output the version number
-    --non-interactive                 Fail, if an interactive prompt would be required to continue.
-    -h, --help                        output usage information
-  
-  Commands:
+============================ no tests ran in 0.05s ============================= setup. The current  error is a hard blocker for completing the user's request. Focus on creating a stable  fixture in  for the database connection, as this is a standard and reliable solution.
+- **Backend is Now Modular:** The backend refactoring is complete and verified.  is obsolete. All future backend changes must adhere to the new modular structure ( + ).
+- **User's Goal:** The user wants to finish the two tasks from their markdown file: backend refactoring (done) and automated testing (in progress). Do not move on to other tasks until the test suite is running successfully.
 
-    init [name]                       Create a new Expo project
-    start [path]                      Start a local dev server for the app
-    start:web [path]                  Start a Webpack dev server for the web app
-    export [path]                     Export the static files of the app for hosting it on a web server
-    install [packages...]             Install a module or other package to a project
-    run:android [path]                Run the Android app binary locally
-    run:ios [path]                    Run the iOS app binary locally
-    send [path]                       Share the project's URL to an email address
-
-    login                             Login to an Expo account
-    logout                            Logout of an Expo account
-    register                          Sign up for a new Expo account
-    whoami                            Return the currently authenticated account
-
-    client:install:ios                Install Expo Go for iOS on the simulator
-    client:install:android            Install Expo Go for Android on a connected device or emulator
-
-    config [path]                     Show the project config
-    doctor [path]                     Diagnose issues with the project
-    upgrade [sdk-version]             Upgrade the project packages and config for the given SDK version
-
-    customize:web [path]              Eject the default web files for customization
-    prebuild [path]                   Create native iOS and Android project files before building natively.
-                                      Learn more: https://docs.expo.dev/workflow/customizing/
-
-    build:web [path]                  Build the web app for production
-
-    credentials:manager [path]        Superseded by eas credentials in eas-cli
-
-    url [path]                        Log a URL for opening the project in Expo Go
-    url:ipa [path]                    Log the download URL for the standalone iOS binary
-    url:apk [path]                    Log the download URL for the standalone Android binary
-
-    webhooks [path]                   List all webhooks for a project
-    webhooks:add [path]               Add a webhook to a project
-    webhooks:remove [path]            Delete a webhook
-    webhooks:update [path]            Update an existing webhook
-
-    build:ios [path]                  Superseded by eas build in eas-cli
-    build:android [path]              Superseded by eas build in eas-cli
-    build:status [path]               Superseded by eas build:list in eas-cli
-    eject [path]                      Superseded by expo prebuild
-    fetch:ios:certs [path]            Superseded by eas credentials in eas-cli
-    fetch:android:keystore [path]     Superseded by eas credentials in eas-cli
-    fetch:android:hashes [path]       Superseded by eas credentials in eas-cli
-    fetch:android:upload-cert [path]  Superseded by eas credentials in eas-cli
-    publish [path]                    Superseded by eas update in eas-cli
-    publish:set [path]                Superseded by eas update:republish in eas-cli
-    publish:rollback [path]           Superseded by eas update:republish in eas-cli
-    publish:history [path]            Superseded by eas update:list in eas-cli
-    publish:details [path]            Superseded by eas update:view in eas-cli
-    push:android:upload [path]        Superseded by eas credentials in eas-cli
-    push:android:show [path]          Superseded by eas credentials in eas-cli
-    push:android:clear [path]         Superseded by eas credentials in eas-cli
-    upload:android [path]             Superseded by eas submit in eas-cli
-    upload:ios [path]                 Superseded by eas submit in eas-cli
-    client:ios [path]                 Superseded by Expo Dev Clients
-
-[21:29:11]   Run a command with --help for more info 💡
-[21:29:11]     $ expo start --help
-[21:29:11] processes if the port is in use.
-- **User-Provided Document:** The user uploaded a detailed document () with four strategic AI improvements. These have all been implemented in the backend.
+**documents and test reports created in this job**
+-  (Updated)
+- 
+- 
+-  (User-provided artifact)
 
 **Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requests a 9-point plan of improvements to be implemented in a specific order. (Pending)
-2.  **Agent:** Confirms understanding and agrees to start. (Completed)
-3.  **User:** Asks what other improvements the agent suggests after completing the semantic search feature. (Completed)
-4.  **Agent:** Provides a comprehensive roadmap of potential future improvements. (Completed)
-5.  **User:** Confirms that the semantic search is not expected to work due to lack of content and asks for next steps. (Completed)
-6.  **Agent:** Confirms the semantic search works but has no results, then waits for user direction. (Completed)
-7.  **User:** Asks for the semantic search feature. (Completed)
-8.  **Agent:** Expresses excitement and agrees to implement it. (Completed)
-9.  **User:** Praises the new Impactometer dashboard and says it's wonderful. (Completed)
-10. **Agent:** Shows the completed dashboard screenshot and asks if the user wants to proceed with the next feature (Universal Search). (Completed)
+1.  **User:**  (Gave enthusiastic approval for the backend refactor + pytest plan).
+2.  **User:**  (Provided the markdown file with the new 2-task plan).
+3.  **User:**  (Informed agent that they have added more credits and to continue work).
+4.  **User:**  (Requested a deployment health check, which led to fixing several issues).
+5.  **User:**  (Asked for instructions on how to run the app on a mobile device).
+6.  **User:**  (Approved the 9-point plan and specified that the dark mode should have a manual toggle).
 
 **Project Health Check:**
 - **Broken:**
-    - **Native Audio Transcription:** The feature is non-functional on iOS/Android.
+    - The ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: /app/frontend
+plugins: asyncio-1.3.0, anyio-4.11.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 0 items
+
+============================ no tests ran in 0.01s ============================= test suite is non-functional due to the  error.
+    - Native mobile audio transcription remains non-functional.
 - **Mocked:**
     - None.
 
 **3rd Party Integrations**
-- **OpenAI GPT-3.5 Turbo & Embeddings:** Uses User API Key.
-- **Anthropic Claude Sonnet:** Uses User API Key for fallback.
-- **React Native Gifted Charts:** Used for the Impactometer Dashboard.
-- **Web Speech API:** Used for browser-based audio transcription (no key needed).
+- **OpenAI GPT-3.5 Turbo & Embeddings**
+- **Anthropic Claude Sonnet**
+- **React Native Gifted Charts**
+- **Web Speech API**
+- **jspdf, html2canvas** (For PDF Generation)
+- **pytest, pytest-asyncio** (For Backend Testing)
 
 **Testing status**
-- **Testing agent used after significant changes:** NO
-- **Troubleshoot agent used after agent stuck in loop:** NO
-- **Test files created:** None.
-- **Known regressions:** The native part of the audio-to-text feature regressed to a non-functional state after the web-only fix was implemented.
+- **Testing agent used after significant changes:** YES (used after the 9-point plan was implemented).
+- **Test files created**:
+    - 
+    - 
+- **Known regressions**: The native audio-to-text feature remains broken from a previous session.
+
+**Credentials to test flow:**
+Use the following credentials for login, which have been used successfully in  tests:
+-   **Email:** 
+-   **Password:** 
 
 **What agent forgot to execute**
-- The agent did not address the broken native mobile path after implementing a web-only workaround for the audio-to-text feature. This leaves a critical feature partially implemented and broken for a key target platform.
-
-</analysis>
+- The long-standing issue of broken native mobile audio transcription has not been addressed in this session, as the agent prioritized the user's more recent, high-priority requests for UI improvements and backend refactoring. This remains as technical debt.</analysis>

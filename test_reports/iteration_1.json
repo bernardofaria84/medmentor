@@ -47,7 +47,7 @@
   "seed_data_creation": "No seed data created",
   "retest_needed": false,
   "should_main_agent_self_test": true,
-  "context_for_next_testing_agent": "This is a React Native Expo app running as web. The app URL is https://medmentor-v2.preview.emergentagent.com. The ngrok tunnel is unstable - if you get 520 errors, retry or wait for the expo service to restart. All major features are functional: Login, Signup with PasswordStrength component, Profile with dark mode toggle, About page with Terms/Privacy, History with date/mentor filters and EmptyState, Chat with EmptyState, Conversation with SOAP button and PDF export. Test user: doctor@example.com / password123",
+  "context_for_next_testing_agent": "This is a React Native Expo app running as web. The app URL is https://medmentor-qa-env.preview.emergentagent.com. The ngrok tunnel is unstable - if you get 520 errors, retry or wait for the expo service to restart. All major features are functional: Login, Signup with PasswordStrength component, Profile with dark mode toggle, About page with Terms/Privacy, History with date/mentor filters and EmptyState, Chat with EmptyState, Conversation with SOAP button and PDF export. Test user: doctor@example.com / password123",
   "features_tested": {
     "login_page": {
       "status": "PASS",
