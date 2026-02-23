@@ -1,7 +1,6 @@
 """
 Shared dependencies for all routers.
 Provides database connections, GridFS, and logger.
-Uses lazy initialization for Motor to support pytest-asyncio.
 """
 import os
 import logging
@@ -17,40 +16,54 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 db_name = os.environ['DB_NAME']
 
-# Sync client (for GridFS) - always safe
+# Sync client (for GridFS) - always safe to create at import time
 sync_client = MongoClient(mongo_url)
 sync_db = sync_client[db_name]
 fs = gridfs.GridFS(sync_db)
 
-# Async client - lazy init
-_async_client = None
-_db = None
+# Async Motor client - lazy initialization to avoid event-loop conflicts with pytest
+_motor_client = None
+_motor_db = None
 
 
-def get_db():
-    global _async_client, _db
-    if _db is None:
-        _async_client = AsyncIOMotorClient(mongo_url)
-        _db = _async_client[db_name]
-    return _db
-
-
-def get_client():
-    get_db()  # ensure init
-    return _async_client
+def _get_motor_db():
+    """Get or lazily create the async Motor database on the current event loop."""
+    global _motor_client, _motor_db
+    if _motor_db is None:
+        _motor_client = AsyncIOMotorClient(mongo_url)
+        _motor_db = _motor_client[db_name]
+    return _motor_db
 
 
 class _DBProxy:
-    """Proxy that lazily initializes Motor on the current event loop."""
+    """Transparent proxy so `from dependencies import db` always resolves
+    to the live Motor database, even when tests swap the backing store."""
+
     def __getattr__(self, name):
-        return getattr(get_db(), name)
+        return getattr(_get_motor_db(), name)
 
     def __getitem__(self, name):
-        return get_db()[name]
+        return _get_motor_db()[name]
 
 
 db = _DBProxy()
-client = property(lambda self: get_client())
+
+
+def get_db():
+    return _get_motor_db()
+
+
+def get_fs():
+    return fs
+
+
+def close_db():
+    global _motor_client, _motor_db
+    if _motor_client:
+        _motor_client.close()
+        _motor_client = None
+        _motor_db = None
+
 
 # Logger
 logging.basicConfig(

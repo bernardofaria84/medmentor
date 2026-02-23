@@ -6,7 +6,7 @@ from datetime import datetime
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 
-from dependencies import db, get_client, logger
+from dependencies import db, close_db, logger
 
 # Services (initialized once)
 from multi_ai_rag_service import MultiAIRAGService
