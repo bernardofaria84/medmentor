@@ -62,7 +62,7 @@ class TestConversationMessages:
         await db.messages.insert_one({
             "_id": str(uuid.uuid4()), "conversation_id": conv_id,
             "sender_type": "MENTOR_BOT", "content": "O tratamento envolve [PACIENTE_1] ...",
-            "citations": [{"source_id": "1", "title": "Artigo", "text": "trecho"}],
+            "citations": [{"source_id": "1", "title": "Artigo", "excerpt": "trecho"}],
             "feedback": "NONE", "sent_at": now,
         })
         resp = await async_client.get(f"/api/conversations/{conv_id}/messages", headers=auth_header(registered_user["token"]))
