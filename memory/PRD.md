@@ -47,7 +47,7 @@ frontend/
 ## O que foi implementado
 
 ### Sessao Atual (Fev 2026)
-- [x] Correcao do setup pytest (erro "Event loop is closed")
+- [x] Correcao layout chips de filtro na tela Historico (chips eram sobrepostos pela lista de conversas)
   - Reescrito `dependencies.py` com _DBProxy e lazy init
   - Reescrito `conftest.py` com fixtures async corretas
   - Configurado `asyncio_default_test_loop_scope = session` no pytest.ini
