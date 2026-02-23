@@ -1,47 +1,46 @@
 """Shared fixtures for all tests."""
 import os
 import sys
+import asyncio
 import pytest
+import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
 # Ensure backend is in path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Use test database
-os.environ.setdefault('DB_NAME', 'medmentor_test_db')
+# Override DB_NAME for tests BEFORE importing app
+os.environ['DB_NAME'] = 'medmentor_test_db'
 
 from main import app
-from dependencies import db, client
+from dependencies import db
 
 
 @pytest.fixture(scope="session")
-def anyio_backend():
-    return "asyncio"
+def event_loop():
+    """Create a single event loop for the entire test session."""
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
 
-@pytest.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)
 async def clean_test_db():
     """Clean test database before each test."""
     collections = await db.list_collection_names()
     for col in collections:
         await db[col].delete_many({})
     yield
-    # Cleanup after test
-    collections = await db.list_collection_names()
-    for col in collections:
-        await db[col].delete_many({})
 
 
-# ---------- helper fixtures ----------
-
-@pytest.fixture
+@pytest_asyncio.fixture
 async def registered_user(async_client: AsyncClient):
     """Register and return a test user with token."""
     resp = await async_client.post("/api/auth/signup", json={
@@ -59,7 +58,7 @@ async def registered_user(async_client: AsyncClient):
     }
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def registered_mentor(async_client: AsyncClient):
     """Register and return a test mentor with token."""
     resp = await async_client.post("/api/auth/mentor/signup", json={
