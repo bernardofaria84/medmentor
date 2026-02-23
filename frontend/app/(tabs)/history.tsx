@@ -270,6 +270,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 8,
     flexGrow: 0,
+    flexShrink: 0,
+    minHeight: 40,
   },
   filterChip: {
     marginRight: 8,
