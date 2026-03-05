@@ -59,67 +59,97 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       throw new Error('SpeechRecognition not supported');
     }
 
-    // Reset transcript accumulator for new recording
     transcriptRef.current = '';
 
-    // Creates a NEW recognition instance — Chrome requires a fresh object on each restart
+    // ── Cross-session deduplication ──────────────────────────────────────────
+    // When Chrome restarts a session it may re-process buffered audio from the
+    // previous session, causing the same words to appear twice.
+    // This function removes any suffix-prefix overlap between what was already
+    // captured (existing) and the new chunk just received from the new session.
+    const deduplicateOverlap = (existing: string, newChunk: string): string => {
+      if (!existing || !newChunk) return newChunk;
+      const existingWords = existing.trim().split(/\s+/);
+      const newWords = newChunk.trim().split(/\s+/);
+      const maxCheck = Math.min(existingWords.length, newWords.length, 20);
+      for (let n = maxCheck; n >= 2; n--) {
+        const tail = existingWords.slice(-n).join(' ').toLowerCase();
+        const head = newWords.slice(0, n).join(' ').toLowerCase();
+        if (tail === head) {
+          console.log(`🔍 Dedup: removed ${n} overlapping words`);
+          return newWords.slice(n).join(' ');
+        }
+      }
+      return newChunk;
+    };
+
+    // Prevent multiple simultaneous restart attempts
+    let restartCooldown = false;
+
+    // Creates a NEW recognition instance — Chrome requires a fresh object on restart
     const createSession = (): any => {
       const rec = new SpeechRecognition();
       rec.lang = 'pt-BR';
       rec.continuous = true;
-      rec.interimResults = true;
+      // KEY: interimResults=false → Chrome only fires onresult for FINALIZED phrases.
+      // interimResults=true causes the "estou estou estou com estou com uma..." 
+      // accumulation pattern on Chrome mobile/Android (each growing interim 
+      // update fires as isFinal=true on some platforms).
+      rec.interimResults = false;
       rec.maxAlternatives = 1;
 
-      // Track the highest result index already processed as final in THIS session.
-      // This prevents re-processing when Chrome fires onresult with resultIndex=0
-      // for previously finalized results (which causes the duplication bug).
-      let lastProcessedFinalIndex = -1;
+      let lastProcessedIndex = -1;
 
       rec.onresult = (event: any) => {
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const result = event.results[i];
-          // Only process final results we haven't seen yet
-          if (result.isFinal && i > lastProcessedFinalIndex) {
-            transcriptRef.current = (transcriptRef.current + ' ' + result[0].transcript).trim();
-            lastProcessedFinalIndex = i;
+          if (event.results[i].isFinal && i > lastProcessedIndex) {
+            const chunk = event.results[i][0].transcript.trim();
+            if (chunk) {
+              // Remove any overlap with previously captured text (cross-session dedup)
+              const clean = deduplicateOverlap(transcriptRef.current, chunk);
+              if (clean) {
+                transcriptRef.current = (transcriptRef.current + ' ' + clean).trim();
+              }
+            }
+            lastProcessedIndex = i;
           }
         }
         console.log('🎤 Transcript:', transcriptRef.current);
       };
 
       rec.onerror = (event: any) => {
-        // 'no-speech' and 'network' are recoverable — onend will fire and we restart
         if (event.error === 'not-allowed') {
           setError('Permissão de microfone negada. Habilite nas configurações do navegador.');
           isRecordingRef.current = false;
           setIsRecording(false);
           stopTimer();
         } else {
+          // 'no-speech', 'network', 'aborted' — recoverable, onend will handle restart
           console.warn('Speech recognition error (recoverable):', event.error);
         }
       };
 
       rec.onend = () => {
-        console.log('Recognition session ended. isRecording:', isRecordingRef.current, 'hasResolver:', !!resolveRef.current);
+        console.log('Session ended. isRecording:', isRecordingRef.current, 'resolver:', !!resolveRef.current);
 
-        if (isRecordingRef.current && !resolveRef.current) {
-          // Auto-restart with a BRAND NEW instance after a small delay
-          // Chrome does NOT allow restarting the same recognition object after onend
+        if (isRecordingRef.current && !resolveRef.current && !restartCooldown) {
+          // Cooldown prevents multiple rapid restarts if Chrome fires onend repeatedly
+          restartCooldown = true;
           setTimeout(() => {
+            restartCooldown = false;
             if (!isRecordingRef.current || resolveRef.current) return;
             try {
               const newSession = createSession();
               newSession.start();
               recognitionRef.current = newSession;
-              console.log('🔄 Recognition session restarted');
+              console.log('🔄 Session restarted');
             } catch (e) {
               console.error('Failed to restart recognition:', e);
             }
-          }, 150);
+          }, 300);
           return;
         }
 
-        // User pressed stop — resolve with accumulated transcript
+        // User pressed stop — resolve with full accumulated transcript
         if (resolveRef.current) {
           resolveRef.current(transcriptRef.current.trim() || null);
           resolveRef.current = null;
@@ -140,7 +170,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       setIsRecording(true);
       setError(null);
       startTimer();
-      console.log('🎤 Speech recognition started (pt-BR)');
+      console.log('🎤 Speech recognition started (pt-BR, continuous, no interims)');
     } catch (err: any) {
       console.error('Error starting speech recognition:', err);
       setError('Erro ao iniciar reconhecimento de voz');
