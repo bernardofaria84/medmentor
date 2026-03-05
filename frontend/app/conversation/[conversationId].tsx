@@ -89,7 +89,7 @@ export default function ConversationScreen() {
     if (isRecording) {
       const text = await stopRecording();
       if (text) {
-        setInputText(prev => prev ? `${prev} ${text}` : text);
+        setInputText(text);
       }
     } else {
       await startRecording();
