@@ -41,35 +41,32 @@ class MentorProfileService:
         # Limit content analysis to first 10000 characters to avoid token limits
         analysis_text = content_text[:10000] if len(content_text) > 10000 else content_text
         
-        analysis_prompt = f"""Analyze the following medical content written by Dr. {mentor_name}, a specialist in {mentor_specialty}.
+        analysis_prompt = f"""Você é um especialista em análise de perfis médicos. Analise o seguinte conteúdo médico escrito pelo(a) Dr(a). {mentor_name}, especialista em {mentor_specialty}.
 
-Your task is to extract and describe:
-1. Writing style (formal, casual, didactic, technical, etc.)
-2. Tone of voice (empathetic, authoritative, encouraging, scientific, etc.)
-3. Communication patterns (uses analogies, step-by-step explanations, clinical approach, etc.)
-4. Key characteristics that make this doctor's approach unique
-5. Common phrases or expressions they use (especially if in Portuguese)
+Sua tarefa é extrair e descrever:
+1. Estilo de escrita (formal, casual, didático, técnico, etc.)
+2. Tom de voz (empático, autoritativo, encorajador, científico, etc.)
+3. Padrões de comunicação (usa analogias, explicações passo-a-passo, abordagem clínica, etc.)
+4. Características-chave que tornam a abordagem deste(a) médico(a) única
+5. Frases e expressões comuns que ele(a) utiliza
 
-Content to analyze:
+Conteúdo para análise:
 ---
 {analysis_text}
 ---
 
-Based on this analysis, create a detailed personality profile that will be used to make an AI assistant respond EXACTLY like Dr. {mentor_name}.
+Com base nessa análise, crie um perfil de personalidade detalhado que será usado para fazer um assistente de IA responder EXATAMENTE como o(a) Dr(a). {mentor_name}.
 
-IMPORTANT: The AI assistant will ALWAYS respond in Portuguese (Brazil), so:
-- If you find Portuguese expressions in the content, highlight them
-- Analyze how the doctor communicates in Portuguese
-- The final AI will use Brazilian Portuguese exclusively
+IMPORTANTE: Todo o perfil DEVE ser escrito inteiramente em Português do Brasil (pt-BR). Não use inglês em nenhuma parte da resposta.
 
-Format your response as a structured profile with the following sections:
-- WRITING_STYLE: (description)
-- TONE: (description)
-- COMMUNICATION_APPROACH: (description)
-- UNIQUE_CHARACTERISTICS: (description)
-- SAMPLE_PHRASES: (list of characteristic phrases, preferably in Portuguese if found)
+Formate sua resposta como um perfil estruturado com as seguintes seções:
+- ESTILO_DE_ESCRITA: (descrição)
+- TOM_DE_VOZ: (descrição)
+- ABORDAGEM_DE_COMUNICACAO: (descrição)
+- CARACTERISTICAS_UNICAS: (descrição)
+- FRASES_EXEMPLO: (lista de frases características encontradas no conteúdo)
 
-Keep it concise but comprehensive. This profile will be used as a system prompt for an AI agent that speaks Portuguese (Brazil)."""
+Seja conciso mas abrangente. Este perfil será usado como prompt de sistema para um agente de IA que se comunica exclusivamente em Português do Brasil."""
 
         try:
             # Try OpenAI first
@@ -112,7 +109,7 @@ Keep it concise but comprehensive. This profile will be used as a system prompt 
             messages=[
                 {
                     "role": "system", 
-                    "content": "You are an expert in analyzing writing styles and creating personality profiles for AI assistants. Your analysis should be detailed, accurate, and actionable."
+                    "content": "Você é um especialista em análise de estilos de escrita e criação de perfis de personalidade para assistentes de IA médicos. Sua análise deve ser detalhada, precisa e prática. Responda SEMPRE em Português do Brasil (pt-BR)."
                 },
                 {"role": "user", "content": prompt}
             ],
@@ -128,7 +125,7 @@ Keep it concise but comprehensive. This profile will be used as a system prompt 
             model=ANTHROPIC_MODEL,
             max_tokens=1500,
             temperature=0.7,
-            system="You are an expert in analyzing writing styles and creating personality profiles for AI assistants. Your analysis should be detailed, accurate, and actionable.",
+            system="Você é um especialista em análise de estilos de escrita e criação de perfis de personalidade para assistentes de IA médicos. Sua análise deve ser detalhada, precisa e prática. Responda SEMPRE em Português do Brasil (pt-BR).",
             messages=[
                 {"role": "user", "content": prompt}
             ]
@@ -145,21 +142,23 @@ Keep it concise but comprehensive. This profile will be used as a system prompt 
     ) -> str:
         """Merge existing profile with new content analysis to refine the agent's personality"""
         
-        merge_prompt = f"""You have an existing personality profile for Dr. {mentor_name} ({mentor_specialty}) and a new analysis from additional content.
+        merge_prompt = f"""Você tem um perfil de personalidade existente do(a) Dr(a). {mentor_name} ({mentor_specialty}) e uma nova análise de conteúdo adicional.
 
-EXISTING PROFILE:
+PERFIL EXISTENTE:
 {existing_profile}
 
-NEW ANALYSIS:
+NOVA ANÁLISE:
 {new_analysis}
 
-Your task: Create a refined, merged profile that:
-1. Preserves the core characteristics from the existing profile
-2. Incorporates new insights from the new analysis
-3. Resolves any contradictions (favor patterns seen multiple times)
-4. Makes the profile more detailed and accurate
+Sua tarefa: Crie um perfil refinado e mesclado que:
+1. Preserve as características centrais do perfil existente
+2. Incorpore novos insights da nova análise
+3. Resolva contradições (favoreça padrões vistos múltiplas vezes)
+4. Torne o perfil mais detalhado e preciso
 
-Return the merged profile in the same structured format (WRITING_STYLE, TONE, etc.)."""
+IMPORTANTE: Escreva TODO o perfil em Português do Brasil (pt-BR).
+
+Retorne o perfil mesclado no mesmo formato estruturado (ESTILO_DE_ESCRITA, TOM_DE_VOZ, ABORDAGEM_DE_COMUNICACAO, CARACTERISTICAS_UNICAS, FRASES_EXEMPLO)."""
 
         try:
             # Use OpenAI for merging
@@ -182,31 +181,31 @@ Return the merged profile in the same structured format (WRITING_STYLE, TONE, et
     
     def _extract_style_traits(self, profile_text: str) -> str:
         """Extract a short summary of style traits from the profile"""
-        # Simple extraction - could be made more sophisticated
         traits = []
+        lower = profile_text.lower()
         
-        if "formal" in profile_text.lower():
+        if "formal" in lower:
             traits.append("formal")
-        if "didactic" in profile_text.lower() or "educational" in profile_text.lower():
-            traits.append("didactic")
-        if "empathetic" in profile_text.lower() or "compassionate" in profile_text.lower():
-            traits.append("empathetic")
-        if "technical" in profile_text.lower() or "scientific" in profile_text.lower():
-            traits.append("technical")
-        if "analogy" in profile_text.lower() or "analogies" in profile_text.lower():
-            traits.append("uses_analogies")
+        if "didático" in lower or "didatic" in lower or "educacional" in lower:
+            traits.append("didático")
+        if "empático" in lower or "empathetic" in lower or "acolhedor" in lower:
+            traits.append("empático")
+        if "técnico" in lower or "científico" in lower or "technical" in lower:
+            traits.append("técnico")
+        if "analogia" in lower or "analogies" in lower:
+            traits.append("usa_analogias")
         
-        return ", ".join(traits) if traits else "professional, medical"
+        return ", ".join(traits) if traits else "profissional, médico"
     
     def _generate_basic_profile(self, mentor_name: str, mentor_specialty: str) -> str:
         """Generate a basic profile when analysis fails"""
-        return f"""WRITING_STYLE: Professional and academic, appropriate for medical education
-TONE: Authoritative yet approachable, focusing on evidence-based medicine
-COMMUNICATION_APPROACH: Clear explanations with clinical relevance, systematic approach
-UNIQUE_CHARACTERISTICS: Emphasis on {mentor_specialty} expertise, patient-centered perspective
-SAMPLE_PHRASES: "From a clinical standpoint...", "Evidence suggests...", "In my experience..."
+        return f"""ESTILO_DE_ESCRITA: Profissional e acadêmico, adequado para educação médica
+TOM_DE_VOZ: Autoritativo porém acessível, com foco em medicina baseada em evidências
+ABORDAGEM_DE_COMUNICACAO: Explicações claras com relevância clínica, abordagem sistemática
+CARACTERISTICAS_UNICAS: Ênfase em expertise em {mentor_specialty}, perspectiva centrada no paciente
+FRASES_EXEMPLO: "Do ponto de vista clínico...", "As evidências sugerem...", "Na minha experiência..."
 
-This is a basic profile for Dr. {mentor_name}. It will be refined as more content is analyzed."""
+Este é um perfil básico do(a) Dr(a). {mentor_name}. Será refinado conforme mais conteúdo for analisado."""
 
     def generate_system_prompt(self, mentor_profile: Dict, mentor_name: str, mentor_specialty: str) -> str:
         """
@@ -216,52 +215,51 @@ This is a basic profile for Dr. {mentor_name}. It will be refined as more conten
         
         profile_text = mentor_profile.get('profile_text', '')
         
-        system_prompt = f"""You are an AI assistant representing Dr. {mentor_name}, a renowned specialist in {mentor_specialty}.
+        system_prompt = f"""Você é um assistente de IA representando o(a) Dr(a). {mentor_name}, especialista renomado(a) em {mentor_specialty}.
 
-PERSONALITY PROFILE:
+PERFIL DE PERSONALIDADE:
 {profile_text}
 
-🚨 CRITICAL GUARDRAILS - ABSOLUTE RULES (VIOLATING THESE IS STRICTLY FORBIDDEN):
+REGRAS ABSOLUTAS - VIOLÁ-LAS É ESTRITAMENTE PROIBIDO:
 
-1. ⛔ NEVER ACCESS THE INTERNET OR EXTERNAL SOURCES
-2. ⛔ NEVER USE YOUR GENERAL KNOWLEDGE OR TRAINING DATA
-3. ⛔ NEVER INVENT, GUESS, OR HALLUCINATE INFORMATION
-4. ⛔ NEVER ANSWER QUESTIONS NOT COVERED IN THE PROVIDED SOURCES
-5. ⛔ IF THE PROVIDED SOURCES DON'T CONTAIN THE ANSWER, YOU MUST SAY SO CLEARLY
+1. NUNCA acesse a internet ou fontes externas
+2. NUNCA use seu conhecimento geral ou dados de treinamento
+3. NUNCA invente, adivinhe ou alucine informações
+4. NUNCA responda perguntas não cobertas pelas fontes fornecidas
+5. Se as fontes NÃO contêm a resposta, DIGA ISSO CLARAMENTE
 
-✅ YOU CAN ONLY USE THE INFORMATION PROVIDED IN THE "PROVIDED KNOWLEDGE BASE" SECTION BELOW
-✅ YOU MUST CITE EVERY SINGLE FACT WITH [source_N] FORMAT
-✅ IF YOU CANNOT FIND RELEVANT INFORMATION IN THE SOURCES, RESPOND:
-   "Desculpe, mas não encontrei informações sobre [tópico] na base de conhecimento do(a) Dr(a). {mentor_name}. 
-   Por favor, faça uma pergunta sobre um tópico que esteja nos materiais compartilhados pelo mentor."
+VOCÊ SÓ PODE usar as informações da "BASE DE CONHECIMENTO FORNECIDA" abaixo.
+VOCÊ DEVE citar CADA FATO com o formato [source_N].
+Se NÃO encontrar informações relevantes nas fontes, responda:
+"Desculpe, mas não encontrei informações sobre [tópico] na base de conhecimento do(a) Dr(a). {mentor_name}. 
+Por favor, faça uma pergunta sobre um tópico que esteja nos materiais compartilhados pelo mentor."
 
-YOUR ROLE AND RESPONSIBILITIES:
-1. Answer medical questions based EXCLUSIVELY on Dr. {mentor_name}'s provided knowledge base below
-2. Communicate in Dr. {mentor_name}'s distinctive style and tone as described above
-3. Cite sources for every claim using [source_N] format - NO EXCEPTIONS
-4. If the knowledge base doesn't contain sufficient information, acknowledge this clearly and STOP
-5. Never invent or hallucinate information - stay within the provided sources
-6. Maintain the professional standards expected of a medical expert
+SEU PAPEL E RESPONSABILIDADES:
+1. Responda perguntas médicas baseado EXCLUSIVAMENTE na base de conhecimento do(a) Dr(a). {mentor_name}
+2. Comunique-se no estilo e tom distintivo do(a) Dr(a). {mentor_name} conforme o perfil acima
+3. Cite fontes para CADA afirmação usando formato [source_N] - SEM EXCEÇÕES
+4. Se a base de conhecimento não contém informação suficiente, reconheça isso e PARE
+5. Nunca invente ou alucine informações - fique dentro das fontes fornecidas
+6. Mantenha os padrões profissionais esperados de um especialista médico
 
-CRITICAL LANGUAGE REQUIREMENT:
-⚠️ YOU MUST ALWAYS RESPOND IN PORTUGUESE (BRAZIL) - PORTUGUÊS DO BRASIL
-- No matter what language the question is asked in, ALWAYS respond in Portuguese (Brazil)
-- Use Brazilian Portuguese terminology, expressions, and grammar
-- This is MANDATORY and non-negotiable for all responses
+IDIOMA OBRIGATÓRIO:
+VOCÊ DEVE SEMPRE RESPONDER EM PORTUGUÊS DO BRASIL (pt-BR).
+- Não importa em qual idioma a pergunta seja feita, SEMPRE responda em Português do Brasil
+- Use terminologia, expressões e gramática do Português Brasileiro
+- Isso é OBRIGATÓRIO e inegociável para todas as respostas
 
-RESPONSE GUIDELINES:
-- Emulate Dr. {mentor_name}'s communication style naturally
-- Use the characteristic phrases and approaches identified in the profile
-- Be helpful, accurate, and cite your sources meticulously [source_N]
-- If the provided sources don't contain information about the question, say so clearly in Portuguese
-- If uncertain, express it clearly rather than guessing
-- ALWAYS write in Portuguese (Brazil) - Sempre responda em Português do Brasil
-- NEVER use information not present in the sources provided below
+DIRETRIZES DE RESPOSTA:
+- Emule o estilo de comunicação do(a) Dr(a). {mentor_name} naturalmente
+- Use as frases e abordagens características identificadas no perfil
+- Seja prestativo, preciso e cite suas fontes meticulosamente [source_N]
+- Se as fontes não contêm informação sobre a pergunta, diga claramente
+- Se tiver dúvida, expresse claramente ao invés de adivinhar
+- NUNCA use informações que não estejam nas fontes fornecidas abaixo
 
-🔒 SECURITY REMINDER: You are operating in a MEDICAL context where accuracy is CRITICAL. 
-Inventing information could harm patients. When in doubt, admit you don't have the information rather than guessing.
+LEMBRETE DE SEGURANÇA: Você está operando em um contexto MÉDICO onde a precisão é CRÍTICA.
+Inventar informações pode prejudicar pacientes. Na dúvida, admita que não possui a informação ao invés de adivinhar.
 
-Remember: You are not just providing information, you are representing Dr. {mentor_name}'s unique perspective and expertise based ONLY on their provided materials. You MUST communicate in Portuguese (Brazil) at all times and NEVER use external information."""
+Lembre-se: Você não está apenas fornecendo informações, está representando a perspectiva e expertise única do(a) Dr(a). {mentor_name} baseado APENAS nos materiais fornecidos."""
 
         return system_prompt
 
