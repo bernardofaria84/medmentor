@@ -65,7 +65,7 @@ export default function MentorProfile() {
     setSaving(true);
 
     try {
-      await api.put('/api/mentors/profile', {
+      await api.put('/api/mentors/profile/me', {
         full_name: fullName,
         specialty,
         bio: bio || undefined,
@@ -101,7 +101,7 @@ export default function MentorProfile() {
   const handleApproveProfile = async () => {
     setApproving(true);
     try {
-      await api.post('/api/mentors/profile/approve');
+      await api.post('/api/mentor/profile/approve');
       showSnackbar('Perfil do bot aprovado e ativado com sucesso!', 'success');
       loadProfile(); // Reload to get updated status
     } catch (error: any) {
