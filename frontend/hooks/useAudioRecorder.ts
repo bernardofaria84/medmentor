@@ -52,7 +52,6 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 
   // ========== WEB: Use Browser's Speech Recognition API ==========
   const startRecordingWeb = async () => {
-    // Check for Speech Recognition support
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
@@ -60,67 +59,77 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       throw new Error('SpeechRecognition not supported');
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'pt-BR';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
-
+    // Reset transcript accumulator for new recording
     transcriptRef.current = '';
-    
-    recognition.onresult = (event: any) => {
-      let finalTranscript = '';
-      let interimTranscript = '';
-      
-      for (let i = 0; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) {
-          finalTranscript += result[0].transcript + ' ';
-        } else {
-          interimTranscript += result[0].transcript;
+
+    // Creates a NEW recognition instance — Chrome requires a fresh object on each restart
+    const createSession = (): any => {
+      const rec = new SpeechRecognition();
+      rec.lang = 'pt-BR';
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.maxAlternatives = 1;
+
+      rec.onresult = (event: any) => {
+        // Iterate only new results since last event
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            transcriptRef.current = (transcriptRef.current + ' ' + result[0].transcript).trim();
+          }
         }
-      }
-      
-      transcriptRef.current = (finalTranscript + interimTranscript).trim();
-      console.log('🎤 Transcript update:', transcriptRef.current);
+        console.log('🎤 Transcript:', transcriptRef.current);
+      };
+
+      rec.onerror = (event: any) => {
+        // 'no-speech' and 'network' are recoverable — onend will fire and we restart
+        if (event.error === 'not-allowed') {
+          setError('Permissão de microfone negada. Habilite nas configurações do navegador.');
+          isRecordingRef.current = false;
+          setIsRecording(false);
+          stopTimer();
+        } else {
+          console.warn('Speech recognition error (recoverable):', event.error);
+        }
+      };
+
+      rec.onend = () => {
+        console.log('Recognition session ended. isRecording:', isRecordingRef.current, 'hasResolver:', !!resolveRef.current);
+
+        if (isRecordingRef.current && !resolveRef.current) {
+          // Auto-restart with a BRAND NEW instance after a small delay
+          // Chrome does NOT allow restarting the same recognition object after onend
+          setTimeout(() => {
+            if (!isRecordingRef.current || resolveRef.current) return;
+            try {
+              const newSession = createSession();
+              newSession.start();
+              recognitionRef.current = newSession;
+              console.log('🔄 Recognition session restarted');
+            } catch (e) {
+              console.error('Failed to restart recognition:', e);
+            }
+          }, 150);
+          return;
+        }
+
+        // User pressed stop — resolve with accumulated transcript
+        if (resolveRef.current) {
+          resolveRef.current(transcriptRef.current.trim() || null);
+          resolveRef.current = null;
+        }
+        isRecordingRef.current = false;
+        setIsRecording(false);
+        stopTimer();
+      };
+
+      return rec;
     };
 
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-      if (event.error === 'not-allowed') {
-        setError('Permissão de microfone negada. Habilite nas configurações do navegador.');
-      } else if (event.error === 'no-speech') {
-        // This is normal - no speech detected yet
-        console.log('No speech detected, continuing...');
-      } else {
-        setError(`Erro no reconhecimento: ${event.error}`);
-      }
-    };
-
-    recognition.onend = () => {
-      console.log('Speech recognition ended');
-      // If still recording (user hasn't pressed stop), auto-restart
-      // This prevents browser's ~15s silence timeout from cutting off
-      if (isRecordingRef.current && !resolveRef.current) {
-        console.log('Auto-restarting speech recognition...');
-        try { recognition.start(); } catch (e) {}
-        return;
-      }
-      // User pressed stop - resolve the promise
-      if (resolveRef.current) {
-        const text = transcriptRef.current.trim();
-        resolveRef.current(text || null);
-        resolveRef.current = null;
-      }
-      isRecordingRef.current = false;
-      setIsRecording(false);
-      stopTimer();
-    };
-
-    recognitionRef.current = recognition;
-    
     try {
+      const recognition = createSession();
       recognition.start();
+      recognitionRef.current = recognition;
       isRecordingRef.current = true;
       setIsRecording(true);
       setError(null);
