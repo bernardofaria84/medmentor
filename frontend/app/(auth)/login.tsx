@@ -5,6 +5,8 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ONBOARDING_KEY } from '../onboarding';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -26,8 +28,13 @@ export default function LoginScreen() {
 
     try {
       const result = await login(email, password);
-      // Subscriber login ALWAYS goes to subscriber area
-      router.replace('/(tabs)/home');
+      // Check if onboarding has been seen
+      const onboardingSeen = await AsyncStorage.getItem(ONBOARDING_KEY);
+      if (!onboardingSeen) {
+        router.replace('/onboarding');
+      } else {
+        router.replace('/(tabs)/home');
+      }
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login');
     } finally {

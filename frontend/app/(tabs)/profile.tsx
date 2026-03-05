@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Button, Avatar, Surface, Divider, List, Portal, Dialog, Switch } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Platform, Image, Pressable, Alert } from 'react-native';
+import { Text, Button, Avatar, Surface, Divider, List, Portal, Dialog, Switch, ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppTheme } from '../../contexts/ThemeContext';
-import { getUserProfile } from '../../services/api';
+import { getUserProfile, updateUserProfile } from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -23,6 +23,8 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [localAvatar, setLocalAvatar] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -33,10 +35,52 @@ export default function ProfileScreen() {
     try {
       const data = await getUserProfile();
       setProfile(data);
+      if (data.profile_picture_url) setLocalAvatar(data.profile_picture_url);
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePickImage = () => {
+    if (Platform.OS === 'web') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (e: any) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        // Compress by loading into a canvas at max 300x300
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          const dataUrl = ev.target?.result as string;
+          const img = new window.Image();
+          img.onload = async () => {
+            const canvas = document.createElement('canvas');
+            const max = 300;
+            const ratio = Math.min(max / img.width, max / img.height, 1);
+            canvas.width = img.width * ratio;
+            canvas.height = img.height * ratio;
+            canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.75);
+            try {
+              setUploadingAvatar(true);
+              await updateUserProfile({ profile_picture_url: compressed });
+              setLocalAvatar(compressed);
+            } catch (err) {
+              Alert.alert('Erro', 'Não foi possível salvar a foto. Tente novamente.');
+            } finally {
+              setUploadingAvatar(false);
+            }
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    } else {
+      Alert.alert('Em breve', 'Upload de foto disponível em breve no app nativo.');
     }
   };
 
@@ -70,11 +114,23 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Surface style={[styles.profileCard, { backgroundColor: colors.card }]} elevation={1}>
           <View style={styles.avatarContainer}>
-            <Avatar.Text
-              size={80}
-              label={profile.full_name.substring(0, 2).toUpperCase()}
-              style={{ backgroundColor: colors.primary }}
-            />
+            <Pressable onPress={handlePickImage} style={styles.avatarWrapper} data-testid="avatar-upload-btn">
+              {localAvatar ? (
+                <Image source={{ uri: localAvatar }} style={styles.avatarImage} />
+              ) : (
+                <Avatar.Text
+                  size={80}
+                  label={profile.full_name.substring(0, 2).toUpperCase()}
+                  style={{ backgroundColor: colors.primary }}
+                />
+              )}
+              <View style={[styles.avatarEditBadge, { backgroundColor: colors.primary }]}>
+                {uploadingAvatar
+                  ? <ActivityIndicator size={10} color="#fff" />
+                  : <MaterialCommunityIcons name="camera" size={12} color="#fff" />
+                }
+              </View>
+            </Pressable>
             <Text variant="headlineSmall" style={[styles.name, { color: colors.text }]}>
               {profile.full_name}
             </Text>
@@ -201,6 +257,30 @@ const styles = StyleSheet.create({
   avatarContainer: {
     alignItems: 'center',
     padding: 24,
+  },
+  avatarWrapper: {
+    position: 'relative',
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    marginBottom: 0,
+  },
+  avatarImage: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   name: {
     fontWeight: 'bold',

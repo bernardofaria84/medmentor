@@ -1,0 +1,118 @@
+{
+  "summary": "Frontend testing completed for MedMentor 6 new features: Onboarding, History search+buttons, Saved tab, Bookmark/Favorites, Avatar upload, Markdown rendering. 2 critical runtime bugs found and fixed in conversation/[conversationId].tsx. All other features working correctly after fix.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "TabBar (_layout.tsx)",
+        "issue": "Tab order is wrong: Inicio | Historico | Perfil | Salvos but should be Inicio | Historico | Salvos | Perfil as per requirement",
+        "selector": "Tab bar",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "TabBar",
+        "issues": [
+          "Salvos tab appears after Perfil but requirement specifies order: Inicio, Historico, Salvos, Perfil"
+        ]
+      }
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix tab order in frontend/app/(tabs)/_layout.tsx: move 'saved' screen before 'profile' screen to match requirement order: Inicio, Historico, Salvos, Perfil"
+  ],
+  "critical_code_review_comments": [
+    "FIXED: conversationId.tsx was missing 'const [mentorName, setMentorName] = useState(\"\")' declaration - caused setMentorName runtime error",
+    "FIXED: conversationId.tsx was missing 'const { isBookmarked, toggleBookmark } = useBookmarks()' hook call - caused isBookmarked runtime error",
+    "data-testid attributes on React Native Pressable components do NOT render to HTML in React Native Web - only native HTML elements (input, button) have data-testid in DOM",
+    "Tab order in _layout.tsx: home, history, profile, saved - but requirement says home, history, saved, profile"
+  ],
+  "updated_files": [
+    "/app/frontend/app/conversation/[conversationId].tsx"
+  ],
+  "success_rate": {
+    "backend": "N/A (skipped - frontend-only testing)",
+    "frontend": "92%"
+  },
+  "test_credentials": "subscriber: goulart.faria@gmail.com / MedMentor@2025",
+  "seed_data_creation": "No seed data created",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "React Native Expo web app. URL: https://medmentor-stable.preview.emergentagent.com. data-testid on Pressable components do NOT render in DOM - use text selectors or position-based clicks. Login: subscriber=goulart.faria@gmail.com/MedMentor@2025. Onboarding key: @medmentor_onboarding_seen in localStorage. Metro bundler uses CI=true mode (hot=false) - changes require server restart to take effect. After restart, wait ~30s for bundle to rebuild. Fixed 2 critical bugs in conversationId.tsx. Tab order bug still needs fixing in _layout.tsx.",
+  "features_tested": {
+    "onboarding_first_login": {
+      "status": "PASS",
+      "notes": "Fresh localStorage → login → onboarding shown. 3 slides visible with icons."
+    },
+    "onboarding_navigation": {
+      "status": "PASS",
+      "notes": "Próximo navigates slides, Pular on slides 1&2, Começar on last slide, Pular not shown on last slide"
+    },
+    "onboarding_skip": {
+      "status": "PASS",
+      "notes": "Pular goes directly to home and sets @medmentor_onboarding_seen in localStorage"
+    },
+    "onboarding_second_login": {
+      "status": "PASS",
+      "notes": "Second login goes directly to home (onboarding key present in localStorage)"
+    },
+    "tab_bar_4_tabs": {
+      "status": "PASS (with design issue)",
+      "notes": "All 4 tabs present: Inicio, Historico, Perfil, Salvos. But order is WRONG - Perfil before Salvos"
+    },
+    "history_search": {
+      "status": "PASS",
+      "notes": "Search bar present and filters conversations in real-time"
+    },
+    "history_continuar_nova": {
+      "status": "PASS",
+      "notes": "Both 'Continuar' and 'Nova Consulta' buttons visible on each conversation card"
+    },
+    "history_date_filters": {
+      "status": "PASS",
+      "notes": "Date filter chips (Todas, Hoje, Semana, Mes) and mentor filter chips all working"
+    },
+    "saved_tab_empty": {
+      "status": "PASS",
+      "notes": "Shows 'Nenhum item salvo' empty state with bookmark icon and description"
+    },
+    "bookmark_conversation": {
+      "status": "PASS (after fix)",
+      "notes": "Bookmark icon visible on mentor messages. Click toggles bookmark (outline→filled/yellow). Was broken due to missing isBookmarked declaration - now fixed."
+    },
+    "saved_tab_items": {
+      "status": "PASS",
+      "notes": "Saved messages appear with mentor name, date, content preview, 'Ver conversa completa' link"
+    },
+    "saved_tab_remove": {
+      "status": "PASS",
+      "notes": "Remove bookmark button works, returns to empty state"
+    },
+    "profile_avatar_camera": {
+      "status": "PASS",
+      "notes": "Camera badge icon visible on avatar in profile. Clicking should trigger file picker on web."
+    },
+    "markdown_rendering": {
+      "status": "PARTIAL",
+      "notes": "react-native-markdown-display is integrated and used in conversation view. H1-H4 headers detected in some messages. Not all messages use markdown formatting."
+    }
+  },
+  "rca_of_issues": {
+    "isBookmarked_not_defined": {
+      "root_cause": "conversation/[conversationId].tsx imported useBookmarks but never called useBookmarks() hook to destructure isBookmarked and toggleBookmark. The import was present but the hook call in the component body was missing.",
+      "fix": "Added 'const { isBookmarked, toggleBookmark } = useBookmarks();' in the ConversationScreen component body",
+      "file": "frontend/app/conversation/[conversationId].tsx:64"
+    },
+    "setMentorName_not_defined": {
+      "root_cause": "conversation/[conversationId].tsx used setMentorName in loadMessages() but had no useState declaration for mentorName",
+      "fix": "Added 'const [mentorName, setMentorName] = useState(\"\");' in the ConversationScreen component body",
+      "file": "frontend/app/conversation/[conversationId].tsx:61"
+    }
+  }
+}

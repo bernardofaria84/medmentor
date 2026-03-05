@@ -55,6 +55,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="saved"
+        options={{
+          title: 'Salvos',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="bookmark-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="about"
         options={{
           href: null,

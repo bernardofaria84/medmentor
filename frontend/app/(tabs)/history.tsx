@@ -221,7 +221,6 @@ export default function HistoryScreen() {
               <Card
                 key={conv.id}
                 style={[styles.card, { backgroundColor: colors.card }]}
-                onPress={() => router.push(`/conversation/${conv.id}`)}
                 data-testid={`conversation-card-${conv.id}`}
               >
                 <Card.Content>
@@ -243,6 +242,25 @@ export default function HistoryScreen() {
                   <Text variant="bodySmall" numberOfLines={2} style={{ color: colors.textSecondary }}>
                     {conv.last_message}
                   </Text>
+                  {/* Feature 2: Continue vs New */}
+                  <View style={styles.cardActions}>
+                    <Pressable
+                      onPress={() => router.push(`/conversation/${conv.id}`)}
+                      style={[styles.actionBtn, { backgroundColor: colors.primary }]}
+                      data-testid={`continue-conv-${conv.id}`}
+                    >
+                      <MaterialCommunityIcons name="message-reply-text" size={14} color="#fff" />
+                      <Text style={styles.actionBtnText}>Continuar</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => router.push(`/chat/${conv.mentor_id}`)}
+                      style={[styles.actionBtn, { backgroundColor: colors.surfaceVariant }]}
+                      data-testid={`new-conv-${conv.mentor_id}`}
+                    >
+                      <MaterialCommunityIcons name="plus" size={14} color={colors.primary} />
+                      <Text style={[styles.actionBtnText, { color: colors.primary }]}>Nova Consulta</Text>
+                    </Pressable>
+                  </View>
                 </Card.Content>
               </Card>
             ))}
@@ -314,5 +332,23 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: 'bold',
     marginBottom: 6,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  actionBtnText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

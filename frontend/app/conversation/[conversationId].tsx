@@ -18,6 +18,8 @@ import * as Clipboard from 'expo-clipboard';
 import api from '../../services/api';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { useAppTheme } from '../../contexts/ThemeContext';
+import { useBookmarks } from '../../hooks/useBookmarks';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 function exportSOAPAsPDF(soapSummary: string) {
   if (Platform.OS === 'web') {
@@ -54,6 +56,12 @@ export default function ConversationScreen() {
   const [sending, setSending] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const { colors } = useAppTheme();
+
+  // Mentor name
+  const [mentorName, setMentorName] = useState('');
+
+  // Bookmarks
+  const { isBookmarked, toggleBookmark } = useBookmarks();
 
   // SOAP Modal states
   const [showSOAPModal, setShowSOAPModal] = useState(false);
@@ -95,8 +103,13 @@ export default function ConversationScreen() {
   const loadMessages = async () => {
     try {
       setLoading(true);
-      const messagesData = await getConversationMessages(conversationId as string);
+      const [messagesData, conversations] = await Promise.all([
+        getConversationMessages(conversationId as string),
+        getConversations(),
+      ]);
       setMessages(messagesData);
+      const current = conversations.find((c: any) => c.id === conversationId);
+      if (current?.mentor_name) setMentorName(current.mentor_name);
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {
@@ -164,6 +177,7 @@ export default function ConversationScreen() {
 
   const renderMessage = (message: any) => {
     const isUser = message.sender_type === 'USER';
+    const bookmarked = !isUser && isBookmarked(message.id);
 
     return (
       <View
@@ -198,6 +212,24 @@ export default function ConversationScreen() {
                   </Chip>
                 ))}
               </View>
+            )}
+            {!isUser && (
+              <TouchableOpacity
+                onPress={() => toggleBookmark({
+                  messageId: message.id,
+                  content: message.content,
+                  mentorName,
+                  conversationId: conversationId as string,
+                })}
+                style={styles.bookmarkBtn}
+                data-testid={`bookmark-msg-${message.id}`}
+              >
+                <MaterialCommunityIcons
+                  name={bookmarked ? 'bookmark' : 'bookmark-outline'}
+                  size={16}
+                  color={bookmarked ? '#f59e0b' : colors.textTertiary}
+                />
+              </TouchableOpacity>
             )}
           </Card.Content>
         </Card>
@@ -412,6 +444,11 @@ const styles = StyleSheet.create({
   citationChip: {
     marginRight: 8,
     marginBottom: 8,
+  },
+  bookmarkBtn: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+    padding: 4,
   },
   inputContainer: {
     padding: 12,

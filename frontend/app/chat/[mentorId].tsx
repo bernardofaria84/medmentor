@@ -16,6 +16,8 @@ import Markdown from 'react-native-markdown-display';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import EmptyState from '../../components/EmptyState';
+import { useBookmarks } from '../../hooks/useBookmarks';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface Message {
   id: string;
@@ -34,6 +36,7 @@ export default function ChatScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { isBookmarked, toggleBookmark } = useBookmarks();
 
   const {
     isRecording,
@@ -197,6 +200,24 @@ export default function ChatScreen() {
                         ))}
                       </View>
                     )}
+                    {message.sender_type === 'MENTOR_BOT' && (
+                      <TouchableOpacity
+                        onPress={() => toggleBookmark({
+                          messageId: message.id,
+                          content: message.content,
+                          mentorName: mentorName,
+                          conversationId: '',
+                        })}
+                        style={styles.bookmarkBtn}
+                        data-testid={`bookmark-msg-${message.id}`}
+                      >
+                        <MaterialCommunityIcons
+                          name={isBookmarked(message.id) ? 'bookmark' : 'bookmark-outline'}
+                          size={16}
+                          color={isBookmarked(message.id) ? '#f59e0b' : colors.textTertiary}
+                        />
+                      </TouchableOpacity>
+                    )}
                   </Card.Content>
                 </Card>
               </View>
@@ -310,6 +331,11 @@ const styles = StyleSheet.create({
   citationChip: {
     marginRight: 8,
     marginBottom: 4,
+  },
+  bookmarkBtn: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+    padding: 4,
   },
   loadingContainer: {
     flexDirection: 'row',
