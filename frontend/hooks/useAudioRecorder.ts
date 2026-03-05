@@ -70,12 +70,18 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       rec.interimResults = true;
       rec.maxAlternatives = 1;
 
+      // Track the highest result index already processed as final in THIS session.
+      // This prevents re-processing when Chrome fires onresult with resultIndex=0
+      // for previously finalized results (which causes the duplication bug).
+      let lastProcessedFinalIndex = -1;
+
       rec.onresult = (event: any) => {
-        // Iterate only new results since last event
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const result = event.results[i];
-          if (result.isFinal) {
+          // Only process final results we haven't seen yet
+          if (result.isFinal && i > lastProcessedFinalIndex) {
             transcriptRef.current = (transcriptRef.current + ' ' + result[0].transcript).trim();
+            lastProcessedFinalIndex = i;
           }
         }
         console.log('🎤 Transcript:', transcriptRef.current);
