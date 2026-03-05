@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Platform } from 'react-native';
+import api from '../services/api';
 
 interface UseAudioRecorderReturn {
   isRecording: boolean;
@@ -18,11 +19,12 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const [error, setError] = useState<string | null>(null);
   
   const isRecordingRef = useRef(false);
-  const recognitionRef = useRef<any>(null);
+  // Web: MediaRecorder-based (replaces Web Speech API)
+  const mediaRecorderRef = useRef<{ recorder: MediaRecorder; chunks: Blob[]; stream: MediaStream } | null>(null);
+  const recordingCancelledRef = useRef(false);
+  // Native: expo-av based
   const transcriptRef = useRef<string>('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const resolveRef = useRef<((text: string | null) => void) | null>(null);
-  const MAX_DURATION = 180; // 3 minutes
 
   // Clean up on unmount
   useEffect(() => {
@@ -50,153 +52,105 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     }
   };
 
-  // ========== WEB: Use Browser's Speech Recognition API ==========
+  // ========== WEB: MediaRecorder → OpenAI Whisper ==========
+  // Replaces the old Web Speech API approach.
+  // Advantages: no session restarts, no duplicates, superior accuracy, works on all browsers.
   const startRecordingWeb = async () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-      setError('Seu navegador não suporta reconhecimento de voz. Use Chrome ou Edge.');
-      throw new Error('SpeechRecognition not supported');
-    }
-
-    transcriptRef.current = '';
-
-    // ── Cross-session deduplication ──────────────────────────────────────────
-    // When Chrome restarts a session it may re-process buffered audio from the
-    // previous session, causing the same words to appear twice.
-    // This function removes any suffix-prefix overlap between what was already
-    // captured (existing) and the new chunk just received from the new session.
-    const deduplicateOverlap = (existing: string, newChunk: string): string => {
-      if (!existing || !newChunk) return newChunk;
-      const existingWords = existing.trim().split(/\s+/);
-      const newWords = newChunk.trim().split(/\s+/);
-      const maxCheck = Math.min(existingWords.length, newWords.length, 20);
-      for (let n = maxCheck; n >= 2; n--) {
-        const tail = existingWords.slice(-n).join(' ').toLowerCase();
-        const head = newWords.slice(0, n).join(' ').toLowerCase();
-        if (tail === head) {
-          console.log(`🔍 Dedup: removed ${n} overlapping words`);
-          return newWords.slice(n).join(' ');
-        }
-      }
-      return newChunk;
-    };
-
-    // Prevent multiple simultaneous restart attempts
-    let restartCooldown = false;
-
-    // Creates a NEW recognition instance — Chrome requires a fresh object on restart
-    const createSession = (): any => {
-      const rec = new SpeechRecognition();
-      rec.lang = 'pt-BR';
-      rec.continuous = true;
-      // KEY: interimResults=false → Chrome only fires onresult for FINALIZED phrases.
-      // interimResults=true causes the "estou estou estou com estou com uma..." 
-      // accumulation pattern on Chrome mobile/Android (each growing interim 
-      // update fires as isFinal=true on some platforms).
-      rec.interimResults = false;
-      rec.maxAlternatives = 1;
-
-      let lastProcessedIndex = -1;
-
-      rec.onresult = (event: any) => {
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          if (event.results[i].isFinal && i > lastProcessedIndex) {
-            const chunk = event.results[i][0].transcript.trim();
-            if (chunk) {
-              // Remove any overlap with previously captured text (cross-session dedup)
-              const clean = deduplicateOverlap(transcriptRef.current, chunk);
-              if (clean) {
-                transcriptRef.current = (transcriptRef.current + ' ' + clean).trim();
-              }
-            }
-            lastProcessedIndex = i;
-          }
-        }
-        console.log('🎤 Transcript:', transcriptRef.current);
-      };
-
-      rec.onerror = (event: any) => {
-        if (event.error === 'not-allowed') {
-          setError('Permissão de microfone negada. Habilite nas configurações do navegador.');
-          isRecordingRef.current = false;
-          setIsRecording(false);
-          stopTimer();
-        } else {
-          // 'no-speech', 'network', 'aborted' — recoverable, onend will handle restart
-          console.warn('Speech recognition error (recoverable):', event.error);
-        }
-      };
-
-      rec.onend = () => {
-        console.log('Session ended. isRecording:', isRecordingRef.current, 'resolver:', !!resolveRef.current);
-
-        if (isRecordingRef.current && !resolveRef.current && !restartCooldown) {
-          // Cooldown prevents multiple rapid restarts if Chrome fires onend repeatedly
-          restartCooldown = true;
-          setTimeout(() => {
-            restartCooldown = false;
-            if (!isRecordingRef.current || resolveRef.current) return;
-            try {
-              const newSession = createSession();
-              newSession.start();
-              recognitionRef.current = newSession;
-              console.log('🔄 Session restarted');
-            } catch (e) {
-              console.error('Failed to restart recognition:', e);
-            }
-          }, 300);
-          return;
-        }
-
-        // User pressed stop — resolve with full accumulated transcript
-        if (resolveRef.current) {
-          resolveRef.current(transcriptRef.current.trim() || null);
-          resolveRef.current = null;
-        }
-        isRecordingRef.current = false;
-        setIsRecording(false);
-        stopTimer();
-      };
-
-      return rec;
-    };
-
     try {
-      const recognition = createSession();
-      recognition.start();
-      recognitionRef.current = recognition;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Pick the best supported MIME type (Chrome = webm/opus, Safari = mp4)
+      const mimeType =
+        MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' :
+        MediaRecorder.isTypeSupported('audio/webm')             ? 'audio/webm' :
+        MediaRecorder.isTypeSupported('audio/mp4')              ? 'audio/mp4' :
+        '';
+
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorderRef.current = { recorder, chunks, stream };
+      recordingCancelledRef.current = false;
+      recorder.start(1000); // collect a chunk every second
+
       isRecordingRef.current = true;
       setIsRecording(true);
       setError(null);
       startTimer();
-      console.log('🎤 Speech recognition started (pt-BR, continuous, no interims)');
+      console.log('🎤 MediaRecorder started, mimeType:', mimeType || 'browser default');
     } catch (err: any) {
-      console.error('Error starting speech recognition:', err);
-      setError('Erro ao iniciar reconhecimento de voz');
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setError('Permissão de microfone negada. Habilite nas configurações do navegador.');
+      } else {
+        setError('Erro ao acessar o microfone. Verifique as permissões.');
+      }
       throw err;
     }
   };
 
   const stopRecordingWeb = (): Promise<string | null> => {
     return new Promise((resolve) => {
-      const recognition = recognitionRef.current;
-      if (!recognition) {
-        resolve(transcriptRef.current.trim() || null);
+      const current = mediaRecorderRef.current;
+      if (!current) {
+        resolve(null);
         return;
       }
 
-      // Set up resolve for when onend fires
-      resolveRef.current = resolve;
-      
-      // Stop recognition - this triggers onend
+      const { recorder, chunks, stream } = current;
+
+      recorder.onstop = async () => {
+        // Release microphone
+        stream.getTracks().forEach(track => track.stop());
+        mediaRecorderRef.current = null;
+
+        // If the user cancelled, don't transcribe
+        if (recordingCancelledRef.current) {
+          resolve(null);
+          return;
+        }
+
+        const mimeType = recorder.mimeType || 'audio/webm';
+        const blob = new Blob(chunks, { type: mimeType });
+
+        if (blob.size === 0) {
+          resolve(null);
+          return;
+        }
+
+        // Map MIME type to file extension Whisper expects
+        const ext =
+          mimeType.includes('mp4') ? 'mp4' :
+          mimeType.includes('ogg') ? 'ogg' :
+          'webm';
+
+        try {
+          const formData = new FormData();
+          formData.append('audio', blob, `recording.${ext}`);
+          // api service handles auth token injection automatically
+          const response = await api.post('/api/transcribe', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          resolve(response.data.text || null);
+          console.log('✅ Whisper transcript:', response.data.text);
+        } catch (err: any) {
+          console.error('Whisper transcription error:', err);
+          setError('Erro na transcrição. Tente novamente.');
+          resolve(null);
+        }
+      };
+
+      // Trigger onstop
       try {
-        recognition.stop();
+        recorder.stop();
       } catch (e) {
         // Already stopped
-        const text = transcriptRef.current.trim();
-        resolve(text || null);
-        resolveRef.current = null;
+        stream.getTracks().forEach(track => track.stop());
+        mediaRecorderRef.current = null;
+        resolve(null);
       }
     });
   };
@@ -325,12 +279,13 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     transcriptRef.current = '';
 
     if (Platform.OS === 'web') {
-      const recognition = recognitionRef.current;
-      if (recognition) {
-        isRecordingRef.current = false; // Prevent auto-restart in onend
-        resolveRef.current = null; // Don't resolve on cancel
-        try { recognition.abort(); } catch (e) {}
-        recognitionRef.current = null;
+      const current = mediaRecorderRef.current;
+      if (current) {
+        recordingCancelledRef.current = true; // Signal onstop to skip transcription
+        isRecordingRef.current = false;
+        current.stream.getTracks().forEach(track => track.stop());
+        try { current.recorder.stop(); } catch (e) {}
+        mediaRecorderRef.current = null;
       }
     } else {
       const recording = recordingObjRef.current;
