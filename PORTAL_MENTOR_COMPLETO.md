@@ -8,12 +8,12 @@ Construí um **portal web completo** para os médicos mentores dentro do mesmo p
 
 ### 1. App Mobile (Já existia)
 - **Para**: Médicos Assinantes
-- **URL**: https://medmentor-qa-env.preview.emergentagent.com
+- **URL**: https://medmentor-stable.preview.emergentagent.com
 - **Acesso**: Via navegador web ou Expo Go app
 
 ### 2. Portal Web do Mentor (✨ NOVO!)
 - **Para**: Médicos Mentores  
-- **URL**: https://medmentor-qa-env.preview.emergentagent.com/(mentor)/login
+- **URL**: https://medmentor-stable.preview.emergentagent.com/(mentor)/login
 - **Acesso**: Via navegador web
 
 ## 🎯 Funcionalidades do Portal do Mentor
@@ -142,7 +142,7 @@ Construí um **portal web completo** para os médicos mentores dentro do mesmo p
 
 ### Para Desktop/Laptop:
 1. Abra o navegador
-2. Acesse: https://medmentor-qa-env.preview.emergentagent.com
+2. Acesse: https://medmentor-stable.preview.emergentagent.com
 3. Clique em "Portal do Mentor" (ou vá direto para `/(mentor)/login`)
 4. Faça login com as credenciais acima
 

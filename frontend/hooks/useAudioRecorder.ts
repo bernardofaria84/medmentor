@@ -17,10 +17,12 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
   
+  const isRecordingRef = useRef(false);
   const recognitionRef = useRef<any>(null);
   const transcriptRef = useRef<string>('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const resolveRef = useRef<((text: string | null) => void) | null>(null);
+  const MAX_DURATION = 180; // 3 minutes
 
   // Clean up on unmount
   useEffect(() => {
@@ -97,13 +99,20 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 
     recognition.onend = () => {
       console.log('Speech recognition ended');
-      // If we're still in recording state, the user hasn't stopped yet
-      // Resolve any pending promise
+      // If still recording (user hasn't pressed stop), auto-restart
+      // This prevents browser's ~15s silence timeout from cutting off
+      if (isRecordingRef.current && !resolveRef.current) {
+        console.log('Auto-restarting speech recognition...');
+        try { recognition.start(); } catch (e) {}
+        return;
+      }
+      // User pressed stop - resolve the promise
       if (resolveRef.current) {
         const text = transcriptRef.current.trim();
         resolveRef.current(text || null);
         resolveRef.current = null;
       }
+      isRecordingRef.current = false;
       setIsRecording(false);
       stopTimer();
     };
@@ -112,6 +121,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     
     try {
       recognition.start();
+      isRecordingRef.current = true;
       setIsRecording(true);
       setError(null);
       startTimer();
@@ -272,6 +282,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     if (Platform.OS === 'web') {
       const recognition = recognitionRef.current;
       if (recognition) {
+        isRecordingRef.current = false; // Prevent auto-restart in onend
         resolveRef.current = null; // Don't resolve on cancel
         try { recognition.abort(); } catch (e) {}
         recognitionRef.current = null;
