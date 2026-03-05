@@ -1,92 +1,96 @@
-# MedMentor v2.0 - Product Requirements Document
+# MedMentor - Product Requirements Document
 
-## Problema Original
-O MedMentor e uma plataforma de mentoria medica com IA que conecta estudantes e profissionais de saude a mentores especializados. A plataforma utiliza RAG (Retrieval-Augmented Generation) para fornecer respostas baseadas no conteudo do mentor.
+## Visão Geral
+Plataforma de mentoria médica com IA que conecta médicos assinantes a mentores especialistas. O mentor alimenta a plataforma com conteúdo (PDFs), e a IA responde consultas usando RAG sobre esse conteúdo.
+
+## Personas
+- **Médico Assinante**: faz perguntas clínicas ao mentor via chat (texto/áudio)
+- **Médico Mentor**: especialista que alimenta a plataforma com conteúdo e responde indiretamente via IA
 
 ## Arquitetura
+```
+/app
+├── backend/
+│   ├── main.py
+│   ├── dependencies.py
+│   ├── models.py
+│   ├── routers/
+│   │   ├── auth.py         # /api/auth/login, /api/auth/mentor/login
+│   │   ├── users.py        # /api/users/profile (GET/PUT)
+│   │   ├── mentors.py      # /api/mentors, /api/mentors/profile/me
+│   │   ├── chat.py         # /api/conversations, /api/chat
+│   │   └── analytics.py    # /api/mentor/impactometer
+│   └── tests/              # pytest suite ~70% coverage
+├── frontend/
+│   ├── app/
+│   │   ├── (auth)/login.tsx          # Login subscriber (com onboarding redirect)
+│   │   ├── (auth)/signup.tsx
+│   │   ├── (mentor)/login.tsx        # Login mentor
+│   │   ├── (tabs)/
+│   │   │   ├── home.tsx              # Lista de mentores
+│   │   │   ├── history.tsx           # Histórico + busca + Continue/Nova Consulta
+│   │   │   ├── saved.tsx             # Aba de mensagens salvas (NEW)
+│   │   │   └── profile.tsx           # Perfil + upload de avatar
+│   │   ├── chat/[mentorId].tsx       # Nova conversa + bookmarks
+│   │   ├── conversation/[conversationId].tsx  # Continuar conversa + bookmarks
+│   │   └── onboarding.tsx            # Onboarding 3 slides (NEW)
+│   ├── contexts/
+│   │   ├── AuthContext.tsx           # Multi-user login (subscriber/mentor)
+│   │   └── ThemeContext.tsx
+│   ├── hooks/
+│   │   ├── useAudioRecorder.ts       # Web Speech API com auto-restart (3 min)
+│   │   └── useBookmarks.ts           # AsyncStorage bookmarks (NEW)
+│   ├── services/
+│   │   └── api.ts                    # API service (process.env.EXPO_PUBLIC_BACKEND_URL)
+│   └── auto-repair.sh               # Self-healing script para dependências
+```
 
-### Backend (FastAPI + MongoDB)
-```
-backend/
-├── main.py                 # Entry point da aplicacao
-├── dependencies.py         # Dependencias compartilhadas (DB, GridFS, Logger)
-├── models.py               # Modelos Pydantic
-├── pytest.ini              # Configuracao do pytest
-├── routers/
-│   ├── auth.py             # Autenticacao (signup, login)
-│   ├── users.py            # Perfil de usuario
-│   ├── mentors.py          # Listagem, perfil, conteudo de mentores
-│   ├── chat.py             # Chat, conversas, SOAP, busca, feedback
-│   └── analytics.py        # Impactometro e analytics
-├── tests/
-│   ├── conftest.py         # Fixtures compartilhadas
-│   ├── test_auth.py        # Testes de autenticacao
-│   ├── test_users.py       # Testes de perfil de usuario
-│   ├── test_mentors.py     # Testes de mentores e conteudo
-│   ├── test_chat.py        # Testes de chat, conversas, feedback
-│   └── test_analytics.py   # Testes de analytics
-├── multi_ai_rag_service.py
-├── mentor_profile_service.py
-├── anonymization_service.py
-└── exceptions.py
-```
+## Stack Técnica
+- **Frontend**: Expo 54, React Native, Expo Router, react-native-paper
+- **Backend**: FastAPI (modular), Motor (async MongoDB)
+- **DB**: MongoDB
+- **IA**: OpenAI GPT-3.5 + Embeddings, Anthropic Claude Sonnet
+- **DevOps**: Supervisor, auto-repair.sh
 
-### Frontend (React Native / Expo)
-```
-frontend/
-├── app/                    # Expo Router pages
-├── context/
-│   └── ThemeContext.tsx     # Dark/Light mode
-├── components/
-│   └── EmptyState.tsx      # Componente reutilizavel
-├── hooks/
-│   └── useAudioRecording.ts
-└── app.config.js           # Env vars para Expo builds
-```
+## Credenciais de Teste
+- **Assinante**: goulart.faria@gmail.com / MedMentor@2025
+- **Mentor**: dra.priscillafrauches@medmentor.com / MedMentor@2025
+- **Test Subscriber**: doctor@example.com / password123
 
 ## O que foi implementado
 
-### Sessao Atual (Fev 2026)
-- [x] Correcao layout chips de filtro na tela Historico (chips eram sobrepostos pela lista de conversas)
-  - Reescrito `dependencies.py` com _DBProxy e lazy init
-  - Reescrito `conftest.py` com fixtures async corretas
-  - Configurado `asyncio_default_test_loop_scope = session` no pytest.ini
-  - Corrigido `main.py` (AnonymizationService como instancia)
-- [x] Suite completa de testes automatizados
-  - 75 testes passando em 5 arquivos
-  - Cobertura total: 70%
-  - auth.py: 98%, analytics.py: 90%, users.py: 94%, mentors.py: 69%, chat.py: 55%
+### Estabilidade e Infraestrutura (sessões anteriores)
+- [x] Backend modular FastAPI (routers separados)
+- [x] Suite pytest com ~70% de cobertura
+- [x] Script auto-repair.sh para self-healing do frontend
+- [x] Fix: login flows subscriber vs mentor (redirecionamentos corretos)
+- [x] Fix: processamento de PDFs (crash resolvido)
+- [x] Fix: perfis de mentor gerados em pt-BR
+- [x] Fix: endpoints save/approve do perfil do mentor
+- [x] Fix: URL de API no bundle (cache Metro com URL antiga)
 
-### Sessoes Anteriores
-- [x] Refatoracao do backend monolitico → modular (routers/)
-- [x] Plano de 9 pontos UI/UX (Splash, Dark Mode, Empty States, About, Validacao, PDF, Filtros)
-- [x] Deploy readiness (otimizacao queries, env vars)
-- [x] Estabilidade do tunnel ngrok
-
-## Integracoes
-- OpenAI GPT-3.5-turbo (RAG)
-- OpenAI Embeddings
-- Anthropic Claude Sonnet
-- Web Speech API
-- jspdf / html2canvas (PDF)
+### Features de UX/UI (implementadas 2026-03-05)
+- [x] **Gravação de áudio**: auto-restart com nova instância a cada sessão Web Speech API (3 min)
+- [x] **Fix duplicação de texto no áudio**: `lastProcessedFinalIndex` evita re-processar resultados finalizados
+- [x] **Busca no histórico**: campo de busca existente com botões "Continuar" e "Nova Consulta" em cada card
+- [x] **Favoritar respostas**: hook useBookmarks (AsyncStorage) + aba "Salvos" + ícone nos messages
+- [x] **Markdown nas mensagens**: react-native-markdown-display em ambos os chat screens
+- [x] **Avatar/foto de perfil**: upload via file input nativo web, compressão em canvas, salvo como base64
+- [x] **Onboarding**: 3 slides com ícones e navegação, exibido apenas na primeira vez (AsyncStorage flag)
+- [x] **Tab order**: Início → Histórico → Salvos → Perfil
 
 ## Backlog
-- [ ] P1: Corrigir audio-to-text nativo (iOS/Android)
-- [ ] P2: Aumentar cobertura de testes (chat flow completo com mocking)
-- [ ] P3: Migrar `on_event` para `lifespan` handlers (FastAPI deprecation)
-- [ ] P3: Corrigir `.dict()` → `.model_dump()` (Pydantic v2 deprecation)
 
-## Endpoints Principais
-- POST /api/auth/signup, /api/auth/login, /api/auth/mentor/signup, /api/auth/mentor/login
-- GET/PUT /api/users/profile
-- GET /api/mentors, /api/mentors/{id}
-- POST /api/chat, GET /api/conversations, /api/conversations/{id}/messages
-- POST /api/conversations/{id}/summarize
-- POST /api/messages/{id}/feedback
-- GET /api/search/universal
-- GET /api/mentor/impactometer, /api/mentor/stats
-- GET /api/mentor/analytics/queries, /ratings, /content, /feedback-details
-- GET/DELETE /api/mentor/content/{id}, POST /api/mentor/content/bulk-delete
+### P1 - Alta Prioridade
+- [ ] Transcrição de áudio nativo iOS/Android (endpoint /api/transcribe está depreciado)
+  - Solução: Integrar OpenAI Whisper no backend
 
-## Credenciais de Teste
-- Email: teste@teste.com / Senha: 123456
+### P2 - Média Prioridade
+- [ ] Exportar conversa como PDF
+- [ ] Dark mode toggle visível na UI de perfil
+- [ ] Notificações push quando nova conversa inicia
+
+### P3 - Backlog
+- [ ] Status do mentor nas consultas (fonte do conhecimento usada)
+- [ ] Busca avançada por conteúdo das mensagens (via backend /api/search/universal)
+- [ ] Pydantic v2 migration no backend
