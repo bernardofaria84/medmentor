@@ -173,8 +173,8 @@ async def upload_content(
             )
 
             # Chunk and embed
-            chunks_processed = await rag_service.process_and_store_content(
-                content_text=pdf_text,
+            chunks_processed = await rag_service.process_pdf_content(
+                pdf_text=pdf_text,
                 mentor_id=current_user["user_id"],
                 content_id=content_id,
                 title=title,
