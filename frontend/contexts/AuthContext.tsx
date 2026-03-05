@@ -91,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signup = async (email: string, password: string, fullName: string, crm: string, specialty?: string) => {
     try {
-      const response = await axios.post(`${API_URL}/api/auth/signup/user`, {
+      const response = await axios.post(`${API_URL}/api/auth/signup`, {
         email,
         password,
         full_name: fullName,

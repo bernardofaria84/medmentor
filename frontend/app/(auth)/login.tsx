@@ -26,11 +26,8 @@ export default function LoginScreen() {
 
     try {
       const result = await login(email, password);
-      if (result.user_type === 'mentor') {
-        router.replace('/(mentor)/dashboard');
-      } else {
-        router.replace('/(tabs)/home');
-      }
+      // Subscriber login ALWAYS goes to subscriber area
+      router.replace('/(tabs)/home');
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login');
     } finally {
