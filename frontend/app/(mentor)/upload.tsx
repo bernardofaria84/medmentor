@@ -72,16 +72,16 @@ export default function UploadContent() {
         },
       });
 
-      Alert.alert(
-        'Sucesso!',
-        'Conteúdo enviado e está sendo processado. Você será notificado quando estiver pronto.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]
-      );
+      if (Platform.OS === 'web') {
+        window.alert('Conteúdo enviado com sucesso! Está sendo processado.');
+        router.back();
+      } else {
+        Alert.alert(
+          'Sucesso!',
+          'Conteúdo enviado e está sendo processado. Você será notificado quando estiver pronto.',
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
+      }
     } catch (error: any) {
       console.error('Upload error:', error);
       Alert.alert('Erro', error.response?.data?.detail || 'Erro ao fazer upload');
