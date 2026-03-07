@@ -161,7 +161,7 @@ export default function ChatScreen() {
               <EmptyState
                 icon="message-text-outline"
                 title="Faça sua primeira pergunta"
-                description={`O Dr. ${mentorName} está pronto para ajudá-lo com base em seu conhecimento especializado.`}
+                description={`${mentorName} está pronto para ajudá-lo com base em seu conhecimento especializado.`}
               />
             )}
 
