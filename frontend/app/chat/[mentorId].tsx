@@ -18,6 +18,7 @@ import { useAppTheme } from '../../contexts/ThemeContext';
 import EmptyState from '../../components/EmptyState';
 import { useBookmarks } from '../../hooks/useBookmarks';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { WhisperSpinner } from '../../components/WhisperSpinner';
 
 interface Message {
   id: string;
@@ -142,6 +143,7 @@ export default function ChatScreen() {
           headerStyle: { backgroundColor: colors.headerBg },
           headerTintColor: colors.headerText,
           headerBackTitle: 'Voltar',
+          headerTitleStyle: { fontFamily: 'Inter_700Bold' },
         }}
       />
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
@@ -158,8 +160,8 @@ export default function ChatScreen() {
             {messages.length === 0 && (
               <EmptyState
                 icon="message-text-outline"
-                title="Faca sua primeira pergunta"
-                description={`O Dr. ${mentorName} esta pronto para ajuda-lo com base em seu conhecimento especializado.`}
+                title="Faça sua primeira pergunta"
+                description={`O Dr. ${mentorName} está pronto para ajudá-lo com base em seu conhecimento especializado.`}
               />
             )}
 
@@ -177,24 +179,31 @@ export default function ChatScreen() {
                   style={[
                     styles.messageCard,
                     message.sender_type === 'USER'
-                      ? { backgroundColor: colors.primary }
-                      : { backgroundColor: colors.card },
+                      ? { backgroundColor: colors.primary, borderBottomRightRadius: 4 }
+                      : { backgroundColor: colors.surface, borderBottomLeftRadius: 4 },
                   ]}
+                  elevation={1}
                 >
                   <Card.Content>
                     {message.sender_type === 'USER' ? (
                       <Text style={styles.messageText}>{message.content}</Text>
                     ) : (
-                      <Markdown style={{ body: { color: colors.text } }}>{message.content}</Markdown>
+                      <Markdown style={{ 
+                        body: { color: colors.text, fontFamily: 'Inter_400Regular' },
+                        heading1: { fontFamily: 'Inter_700Bold' },
+                        strong: { fontFamily: 'Inter_700Bold' }
+                      }}>
+                        {message.content}
+                      </Markdown>
                     )}
                     {message.citations && message.citations.length > 0 && (
                       <View style={[styles.citationsContainer, { borderTopColor: colors.border }]}>
-                        <Text variant="labelSmall" style={{ marginBottom: 8, color: colors.textTertiary }}>
+                        <Text variant="labelSmall" style={{ marginBottom: 8, color: colors.textTertiary, fontFamily: 'Inter_700Bold' }}>
                           Fontes:
                         </Text>
                         {message.citations.map((citation, idx) => (
                           <Chip key={idx} mode="outlined" style={[styles.citationChip, { borderColor: colors.border }]}
-                            textStyle={{ color: colors.textSecondary }}>
+                            textStyle={{ color: colors.textSecondary, fontSize: 10, fontFamily: 'Inter_400Regular' }}>
                             {citation.title}
                           </Chip>
                         ))}
@@ -226,14 +235,14 @@ export default function ChatScreen() {
             {loading && (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                  Dr. {mentorName} esta analisando...
+                <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
+                  Dr. {mentorName} está analisando...
                 </Text>
               </View>
             )}
           </ScrollView>
 
-          <View style={[styles.inputContainer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+          <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
             {isRecording && (
               <View style={styles.recordingBar}>
                 <View style={styles.recordingDot} />
@@ -248,8 +257,8 @@ export default function ChatScreen() {
 
             {isTranscribing && (
               <View style={[styles.transcribingBar, { backgroundColor: colors.primaryLight }]}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={[styles.transcribingText, { color: colors.primary }]}>Transcrevendo audio...</Text>
+                <WhisperSpinner />
+                <Text style={[styles.transcribingText, { color: colors.primary, fontFamily: 'Inter_400Regular' }]}>Transcrevendo áudio...</Text>
               </View>
             )}
 
@@ -263,7 +272,7 @@ export default function ChatScreen() {
               <IconButton
                 icon={isRecording ? "stop-circle" : "microphone"}
                 iconColor={isRecording ? colors.error : colors.primary}
-                size={24}
+                size={28}
                 onPress={handleMicPress}
                 disabled={loading || isTranscribing}
                 style={[styles.micButton, isRecording && styles.micButtonRecording]}
@@ -276,9 +285,11 @@ export default function ChatScreen() {
                 onChangeText={setInputText}
                 multiline
                 maxLength={1000}
-                style={[styles.input, { backgroundColor: colors.card }]}
+                style={[styles.input, { backgroundColor: colors.surface }]}
                 disabled={loading || isRecording}
                 textColor={colors.text}
+                outlineColor={colors.border}
+                activeOutlineColor={colors.primary}
                 right={
                   <TextInput.Icon
                     icon="send"
@@ -309,7 +320,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   messageContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   userMessageContainer: {
     alignItems: 'flex-end',
@@ -319,9 +330,13 @@ const styles = StyleSheet.create({
   },
   messageCard: {
     maxWidth: '85%',
+    borderRadius: 16,
   },
   messageText: {
     color: '#ffffff',
+    fontFamily: 'Inter_400Regular',
+    fontSize: 16,
+    lineHeight: 24,
   },
   citationsContainer: {
     marginTop: 12,
@@ -331,6 +346,7 @@ const styles = StyleSheet.create({
   citationChip: {
     marginRight: 8,
     marginBottom: 4,
+    height: 24,
   },
   bookmarkBtn: {
     alignSelf: 'flex-end',
@@ -349,18 +365,19 @@ const styles = StyleSheet.create({
   inputContainer: {
     padding: 12,
     borderTopWidth: 1,
+    elevation: 4,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
   },
   micButton: {
-    marginRight: 4,
+    marginRight: 8,
     marginBottom: 4,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: '#F3F4F6',
   },
   micButtonRecording: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: '#FEF2F2',
   },
   input: {
     maxHeight: 120,
@@ -369,7 +386,7 @@ const styles = StyleSheet.create({
   recordingBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fef2f2',
+    backgroundColor: '#FEF2F2',
     padding: 10,
     borderRadius: 8,
     marginBottom: 8,
@@ -378,14 +395,15 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#ef4444',
+    backgroundColor: '#EF4444',
     marginRight: 8,
   },
   recordingText: {
     flex: 1,
-    color: '#dc2626',
+    color: '#DC2626',
     fontWeight: '600',
     fontSize: 14,
+    fontFamily: 'Inter_700Bold',
   },
   cancelRecordBtn: {
     paddingHorizontal: 12,
@@ -394,13 +412,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   cancelRecordText: {
-    color: '#64748b',
+    color: '#64748B',
     fontSize: 13,
     fontWeight: '500',
+    fontFamily: 'Inter_700Bold',
   },
   transcribingBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     padding: 10,
     borderRadius: 8,
     marginBottom: 8,
@@ -411,13 +431,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   audioErrorBar: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: '#FEF2F2',
     padding: 8,
     borderRadius: 8,
     marginBottom: 8,
   },
   audioErrorText: {
-    color: '#dc2626',
+    color: '#DC2626',
     fontSize: 13,
+    fontFamily: 'Inter_400Regular',
   },
 });

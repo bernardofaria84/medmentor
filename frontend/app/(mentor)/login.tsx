@@ -3,7 +3,8 @@ import { View, StyleSheet, ScrollView, Platform } from 'react-native';
 import { TextInput, Button, Text, Card } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAppTheme } from '../../contexts/ThemeContext';
+import { BrandLogo } from '../../components/BrandLogo';
 
 export default function MentorLoginScreen() {
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ export default function MentorLoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const { colors } = useAppTheme();
   const router = useRouter();
 
   const handleLogin = async () => {
@@ -33,19 +35,19 @@ export default function MentorLoginScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <MaterialCommunityIcons name="doctor" size={64} color="#2563eb" />
-          <Text variant="displaySmall" style={styles.title}>
+          <BrandLogo size={120} variant="full" />
+          <Text variant="displaySmall" style={[styles.title, { color: colors.primary }]}>
             MedMentor
           </Text>
-          <Text variant="titleMedium" style={styles.subtitle}>
+          <Text variant="titleMedium" style={[styles.subtitle, { color: colors.textSecondary }]}>
             Portal do Mentor
           </Text>
         </View>
 
-        <Card style={styles.card}>
+        <Card style={[styles.card, { backgroundColor: colors.card }]}>
           <Card.Content>
             <TextInput
               label="Email"
@@ -54,8 +56,10 @@ export default function MentorLoginScreen() {
               mode="outlined"
               keyboardType="email-address"
               autoCapitalize="none"
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.inputBg }]}
               disabled={loading}
+              outlineColor={colors.border}
+              activeOutlineColor={colors.primary}
             />
 
             <TextInput
@@ -64,13 +68,15 @@ export default function MentorLoginScreen() {
               onChangeText={setPassword}
               mode="outlined"
               secureTextEntry
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.inputBg }]}
               disabled={loading}
               onSubmitEditing={handleLogin}
+              outlineColor={colors.border}
+              activeOutlineColor={colors.primary}
             />
 
             {error ? (
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
             ) : null}
 
             <Button
@@ -78,12 +84,13 @@ export default function MentorLoginScreen() {
               onPress={handleLogin}
               loading={loading}
               disabled={loading}
-              style={styles.button}
+              style={[styles.button, { backgroundColor: colors.primary }]}
+              labelStyle={{ fontWeight: 'bold' }}
             >
               Entrar
             </Button>
 
-            <Text variant="bodySmall" style={styles.testCredentials}>
+            <Text variant="bodySmall" style={[styles.testCredentials, { color: colors.textTertiary }]}>
               Teste: dr.cardiology@medmentor.com / password123
             </Text>
           </Card.Content>
@@ -94,6 +101,7 @@ export default function MentorLoginScreen() {
             mode="text"
             onPress={() => router.push('/(auth)/login')}
             style={styles.switchButton}
+            textColor={colors.primary}
           >
             Área do Médico Assinante
           </Button>
@@ -106,7 +114,6 @@ export default function MentorLoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#f8fafc',
     justifyContent: 'center',
     padding: 24,
   },
@@ -120,18 +127,16 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
-    fontWeight: 'bold',
-    color: '#2563eb',
+    fontFamily: 'Inter_700Bold',
     marginTop: 16,
   },
   subtitle: {
-    color: '#64748b',
     marginTop: 4,
+    fontFamily: 'Inter_400Regular',
   },
   card: {
     padding: 16,
     borderRadius: 16,
-    backgroundColor: '#ffffff',
   },
   input: {
     marginBottom: 16,
@@ -139,16 +144,15 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 8,
     paddingVertical: 6,
+    borderRadius: 8,
   },
   errorText: {
-    color: '#ef4444',
     marginBottom: 12,
     textAlign: 'center',
   },
   testCredentials: {
     textAlign: 'center',
     marginTop: 16,
-    color: '#94a3b8',
   },
   switchButton: {
     marginTop: 16,

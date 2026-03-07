@@ -3,6 +3,11 @@ import { PaperProvider } from 'react-native-paper';
 import { AuthProvider } from '../contexts/AuthContext';
 import { ThemeProvider, useAppTheme } from '../contexts/ThemeContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useFonts, Inter_400Regular, Inter_700Bold } from '@expo-google-fonts/inter';
+import { useEffect } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+
+SplashScreen.preventAutoHideAsync();
 
 function InnerLayout() {
   const { paperTheme, colors } = useAppTheme();
@@ -25,7 +30,7 @@ function InnerLayout() {
               title: 'Conversa',
               headerStyle: { backgroundColor: colors.headerBg },
               headerTintColor: colors.headerText,
-              headerTitleStyle: { fontWeight: 'bold' },
+              headerTitleStyle: { fontFamily: 'Inter_700Bold' },
             }}
           />
         </Stack>
@@ -35,6 +40,21 @@ function InnerLayout() {
 }
 
 export default function RootLayout() {
+  const [loaded, error] = useFonts({
+    Inter_400Regular,
+    Inter_700Bold,
+  });
+
+  useEffect(() => {
+    if (loaded || error) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded, error]);
+
+  if (!loaded && !error) {
+    return null;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>

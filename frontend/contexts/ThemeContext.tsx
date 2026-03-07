@@ -2,56 +2,57 @@ import React, { createContext, useState, useContext, useEffect, useMemo } from '
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 
+// MedMentor Brand Guidelines 2026
 const LIGHT_COLORS = {
-  background: '#f8fafc',
-  surface: '#ffffff',
-  surfaceVariant: '#f1f5f9',
-  text: '#1e293b',
-  textSecondary: '#64748b',
-  textTertiary: '#94a3b8',
-  primary: '#2563eb',
-  primaryLight: '#dbeafe',
-  border: '#e2e8f0',
-  card: '#ffffff',
-  success: '#22c55e',
-  error: '#ef4444',
-  warning: '#f59e0b',
-  info: '#0891b2',
-  inputBg: '#f5f5f5',
-  headerBg: '#2563eb',
-  headerText: '#ffffff',
-  tabBarBg: '#ffffff',
-  tabBarBorder: '#e2e8f0',
-  kpiPrimary: '#2563eb',
-  kpiSecondary: '#7c3aed',
-  kpiSuccess: '#059669',
-  kpiInfo: '#0891b2',
+  background: '#F8FAFB', // Soft White
+  surface: '#FFFFFF',
+  surfaceVariant: '#F1F5F9',
+  text: '#14213D', // Navy Blue
+  textSecondary: '#6B7280', // Neutral Gray
+  textTertiary: '#9CA3AF',
+  primary: '#0D7377', // Brand Teal
+  primaryLight: '#E6F4F5', // Light Teal
+  border: '#E5E7EB',
+  card: '#FFFFFF',
+  success: '#10B981',
+  error: '#EF4444',
+  warning: '#F59E0B',
+  info: '#00B4D8', // Cyan Accent
+  inputBg: '#F3F4F6',
+  headerBg: '#0D7377', // Brand Teal
+  headerText: '#FFFFFF',
+  tabBarBg: '#FFFFFF',
+  tabBarBorder: '#E5E7EB',
+  kpiPrimary: '#0D7377',
+  kpiSecondary: '#14213D',
+  kpiSuccess: '#10B981',
+  kpiInfo: '#00B4D8',
 };
 
 const DARK_COLORS = {
-  background: '#0f172a',
-  surface: '#1e293b',
+  background: '#0F172A', // Slate 900
+  surface: '#1E293B', // Slate 800
   surfaceVariant: '#334155',
-  text: '#f1f5f9',
-  textSecondary: '#94a3b8',
-  textTertiary: '#64748b',
-  primary: '#3b82f6',
-  primaryLight: '#1e3a5f',
+  text: '#F1F5F9',
+  textSecondary: '#94A3B8',
+  textTertiary: '#64748B',
+  primary: '#0D7377', // Keep Brand Teal (maybe adjust for contrast if needed)
+  primaryLight: '#115E59', // Darker Teal for dark mode backgrounds
   border: '#334155',
-  card: '#1e293b',
-  success: '#22c55e',
-  error: '#ef4444',
-  warning: '#f59e0b',
-  info: '#0891b2',
+  card: '#1E293B',
+  success: '#10B981',
+  error: '#EF4444',
+  warning: '#F59E0B',
+  info: '#00B4D8',
   inputBg: '#334155',
-  headerBg: '#1e293b',
-  headerText: '#f1f5f9',
-  tabBarBg: '#1e293b',
+  headerBg: '#0D7377', // Or Navy #14213D
+  headerText: '#FFFFFF',
+  tabBarBg: '#1E293B',
   tabBarBorder: '#334155',
-  kpiPrimary: '#3b82f6',
-  kpiSecondary: '#8b5cf6',
-  kpiSuccess: '#10b981',
-  kpiInfo: '#06b6d4',
+  kpiPrimary: '#0D7377',
+  kpiSecondary: '#8B5CF6',
+  kpiSuccess: '#10B981',
+  kpiInfo: '#06B6D4',
 };
 
 export type AppColors = typeof LIGHT_COLORS;
@@ -104,7 +105,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         outline: colors.border,
       },
     };
-  }, [isDark]);
+  }, [isDark, colors]);
 
   return (
     <ThemeContext.Provider value={{ isDark, toggleTheme, colors, paperTheme }}>

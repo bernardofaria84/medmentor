@@ -1,0 +1,130 @@
+{
+  "brand_identity": {
+    "name": "MedMentor",
+    "tagline": "O conhecimento do especialista, na palma da sua mão.",
+    "typography": {
+      "font_family": "Inter",
+      "headings": "Inter-Bold",
+      "body": "Inter-Regular",
+      "package": "@expo-google-fonts/inter"
+    },
+    "colors": {
+      "primary": "#0D7377",
+      "primaryLight": "#E6F4F5",
+      "secondary": "#00B4D8",
+      "background": "#F8FAFB",
+      "surface": "#FFFFFF",
+      "surfaceVariant": "#F1F5F9",
+      "text": "#14213D",
+      "textSecondary": "#6B7280",
+      "textTertiary": "#9CA3AF",
+      "border": "#E5E7EB",
+      "error": "#EF4444",
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "info": "#00B4D8",
+      "headerBg": "#0D7377",
+      "headerText": "#FFFFFF",
+      "inputBg": "#F3F4F6",
+      "tabBarBg": "#FFFFFF",
+      "tabBarBorder": "#E5E7EB",
+      "kpiPrimary": "#0D7377",
+      "kpiSecondary": "#14213D",
+      "kpiSuccess": "#10B981",
+      "kpiInfo": "#00B4D8"
+    }
+  },
+  "components": {
+    "BrandLogo": {
+      "path": "/app/frontend/components/BrandLogo.tsx",
+      "description": "A circuit-board medical cross icon. Use react-native-svg.",
+      "props": "size (number), color (string), variant ('full' | 'white' | 'dark')",
+      "svg_paths": [
+        {
+          "d": "M 45 15 L 45 45 L 15 45 C 12 45 10 47 10 50 L 10 70 C 10 73 12 75 15 75 L 45 75 L 45 105 C 45 108 47 110 50 110 L 70 110 C 73 110 75 108 75 105 L 75 75 L 105 75 C 108 75 110 73 110 70 L 110 50 C 110 47 108 45 105 45 L 75 45 L 75 15 C 75 12 73 10 70 10 L 50 10 C 47 10 45 12 45 15 Z",
+          "fill": "currentColor"
+        },
+        {
+          "d": "M 55 20 L 55 40 M 65 20 L 65 40 M 20 55 L 40 55 M 20 65 L 40 65 M 80 55 L 100 55 M 80 65 L 100 65 M 55 80 L 55 100 M 65 80 L 65 100",
+          "stroke": "background",
+          "strokeWidth": "2"
+        },
+        {
+          "d": "M 60 60 Circle 5",
+          "fill": "background"
+        }
+      ],
+      "instructions": "Create a reusable component. If variant='full', use primary color for fill and white for strokes. If 'white', use white fill. If 'dark', use navy fill."
+    },
+    "WhisperSpinner": {
+      "path": "/app/frontend/components/WhisperSpinner.tsx",
+      "description": "Animated pulsing bar indicator for transcription state.",
+      "implementation": "Use Animated.loop with Animated.sequence to create a pulsing width or opacity effect on a View. The color should be primary (#0D7377) or secondary (#00B4D8).",
+      "style": "A horizontal bar that expands/contracts or a row of 3 dots that bounce."
+    }
+  },
+  "screens": {
+    "login": {
+      "path": "/app/frontend/app/(auth)/login.tsx",
+      "changes": [
+        "Replace 'MedMentor' text with <BrandLogo size={120} variant='full' />",
+        "Update layout to center the logo",
+        "Remove manual colors and use theme colors",
+        "Ensure input fields use theme.colors.inputBg",
+        "Add data-testid to all inputs and buttons"
+      ]
+    },
+    "mentor_login": {
+      "path": "/app/frontend/app/(mentor)/login.tsx",
+      "changes": [
+        "Replace MaterialCommunityIcons 'doctor' with <BrandLogo size={120} variant='full' />",
+        "Replace hardcoded #2563eb with theme.colors.primary",
+        "Update background color to theme.colors.background"
+      ]
+    },
+    "home": {
+      "path": "/app/frontend/app/(tabs)/home.tsx",
+      "changes": [
+        "Update 'Bem-vindo' text color to theme.colors.text (Navy)",
+        "Ensure Searchbar uses theme.colors.surface and shadow",
+        "Update Mentor Cards: White background, shadow-sm, rounded-xl",
+        "Avatar background should use theme.colors.primary",
+        "Buttons should use theme.colors.primary"
+      ]
+    },
+    "chat": {
+      "path": "/app/frontend/app/chat/[mentorId].tsx",
+      "changes": [
+        "Update User Message Bubble: background theme.colors.primary (#0D7377), text white",
+        "Update Mentor Message Bubble: background theme.colors.surface (#FFFFFF), text theme.colors.text (#14213D)",
+        "Replace ActivityIndicator in transcribing view with <WhisperSpinner />",
+        "Ensure input area uses theme.colors.surface"
+      ]
+    },
+    "splash": {
+      "path": "/app/frontend/app/index.tsx",
+      "changes": [
+        "Replace MaterialCommunityIcons 'stethoscope' with <BrandLogo variant='white' size={80} />",
+        "Update background color to theme.colors.primary"
+      ]
+    }
+  },
+  "theme_context": {
+    "path": "/app/frontend/contexts/ThemeContext.tsx",
+    "instructions": "Update LIGHT_COLORS and DARK_COLORS with the new palette. Ensure all hex codes match the Brand Identity section."
+  },
+  "layout": {
+    "path": "/app/frontend/app/_layout.tsx",
+    "instructions": "Add Font Loading for Inter (Inter_400Regular, Inter_700Bold). Return null or SplashScreen until fonts are loaded."
+  },
+  "general_guidelines": [
+    "Do not use hardcoded hex values in screens. Always use theme.colors.",
+    "Ensure all text uses the 'Inter' font family via the theme or style prop.",
+    "Use generous padding (16px, 24px) for containers.",
+    "Primary buttons must be Teal (#0D7377) with White text.",
+    "Secondary actions can be outlined or text buttons in Teal.",
+    "Avatars should be circular.",
+    "Cards should have elevation (shadow) and rounded corners (12px or 16px).",
+    "Data-testids are mandatory for all interactive elements."
+  ]
+}

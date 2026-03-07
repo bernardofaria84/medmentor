@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
-import { Text, Card, Avatar, Chip, ActivityIndicator, Searchbar, Divider, IconButton } from 'react-native-paper';
+import { Text, Card, Avatar, Chip, ActivityIndicator, Searchbar, Divider, IconButton, Surface } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { getMentors, getConversations } from '../../services/api';
 import api from '../../services/api';
@@ -112,7 +112,7 @@ export default function HomeScreen() {
 
   const getRelevanceLabel = (score: number) => {
     if (score >= 0.6) return 'Alta';
-    if (score >= 0.45) return 'Media';
+    if (score >= 0.45) return 'Média';
     return 'Baixa';
   };
 
@@ -133,38 +133,41 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.header}>
-          <Text variant="headlineMedium" style={[styles.headerTitle, { color: colors.text }]}>
+          <Text variant="headlineMedium" style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
             Bem-vindo ao MedMentor
           </Text>
-          <Text variant="bodyMedium" style={{ color: colors.textSecondary }}>
-            Converse com especialistas renomados atraves de IA
+          <Text variant="bodyMedium" style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular' }}>
+            Converse com especialistas renomados através de IA
           </Text>
         </View>
 
-        <Searchbar
-          placeholder="Pesquise em todas as bases de conhecimento..."
-          onChangeText={(text) => {
-            setSearchQuery(text);
-            if (text.trim().length < 3) {
-              setSearchResults(null);
-              setSearchError(null);
-            }
-          }}
-          onSubmitEditing={handleSearch}
-          value={searchQuery}
-          style={[styles.searchBar, { backgroundColor: colors.card }]}
-          inputStyle={{ color: colors.text }}
-          iconColor={colors.textSecondary}
-          icon="magnify"
-          loading={isSearching}
-          right={() => searchQuery.length > 0 ? (
-            <IconButton icon="close" size={20} onPress={clearSearch} iconColor={colors.textSecondary} />
-          ) : null}
-          data-testid="universal-search-bar"
-        />
+        <Surface style={[styles.searchContainer, { backgroundColor: colors.surface }]} elevation={2}>
+          <Searchbar
+            placeholder="Pesquise em todas as bases de conhecimento..."
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (text.trim().length < 3) {
+                setSearchResults(null);
+                setSearchError(null);
+              }
+            }}
+            onSubmitEditing={handleSearch}
+            value={searchQuery}
+            style={[styles.searchBar, { backgroundColor: colors.surface }]}
+            inputStyle={{ color: colors.text, fontFamily: 'Inter_400Regular' }}
+            iconColor={colors.textSecondary}
+            icon="magnify"
+            loading={isSearching}
+            right={() => searchQuery.length > 0 ? (
+              <IconButton icon="close" size={20} onPress={clearSearch} iconColor={colors.textSecondary} />
+            ) : null}
+            data-testid="universal-search-bar"
+            elevation={0}
+          />
+        </Surface>
 
         {searchQuery.trim().length > 0 && searchQuery.trim().length < 3 && (
-          <Text style={[styles.searchHint, { color: colors.textTertiary }]}>
+          <Text style={[styles.searchHint, { color: colors.textTertiary, fontFamily: 'Inter_400Regular' }]}>
             Digite pelo menos 3 caracteres e pressione Enter
           </Text>
         )}
@@ -174,7 +177,7 @@ export default function HomeScreen() {
           <View style={styles.searchResultsSection}>
             <View style={styles.searchResultsHeader}>
               <MaterialCommunityIcons name="magnify" size={20} color={colors.primary} />
-              <Text variant="titleMedium" style={[styles.searchResultsTitle, { color: colors.text }]}>
+              <Text variant="titleMedium" style={[styles.searchResultsTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
                 {searchResults.length > 0
                   ? `${searchResults.length} mentor(es) encontrado(s)`
                   : 'Sem resultados'}
@@ -201,24 +204,25 @@ export default function HomeScreen() {
                       size={44}
                       label={result.mentor_name.substring(0, 2).toUpperCase()}
                       style={{ backgroundColor: colors.primary }}
+                      labelStyle={{ fontFamily: 'Inter_700Bold' }}
                     />
                     <View style={styles.resultInfo}>
-                      <Text variant="titleMedium" style={{ fontWeight: 'bold', color: colors.text }}>
+                      <Text variant="titleMedium" style={{ fontFamily: 'Inter_700Bold', color: colors.text }}>
                         {result.mentor_name}
                       </Text>
                       <Chip
                         mode="flat"
                         style={[styles.resultSpecialty, { backgroundColor: colors.primaryLight }]}
-                        textStyle={{ fontSize: 11, color: colors.primary }}
+                        textStyle={{ fontSize: 11, color: colors.primary, fontFamily: 'Inter_700Bold' }}
                       >
                         {result.specialty}
                       </Chip>
                     </View>
                     <View style={styles.relevanceBadge}>
-                      <Text style={[styles.relevanceScore, { color: getRelevanceColor(result.best_score) }]}>
+                      <Text style={[styles.relevanceScore, { color: getRelevanceColor(result.best_score), fontFamily: 'Inter_700Bold' }]}>
                         {Math.round(result.best_score * 100)}%
                       </Text>
-                      <Text style={[styles.relevanceLabel, { color: getRelevanceColor(result.best_score) }]}>
+                      <Text style={[styles.relevanceLabel, { color: getRelevanceColor(result.best_score), fontFamily: 'Inter_400Regular' }]}>
                         {getRelevanceLabel(result.best_score)}
                       </Text>
                     </View>
@@ -230,10 +234,10 @@ export default function HomeScreen() {
                     <View key={i} style={styles.excerptItem}>
                       <MaterialCommunityIcons name="text-box-outline" size={14} color={colors.textTertiary} />
                       <View style={styles.excerptContent}>
-                        <Text variant="bodySmall" style={{ color: colors.textSecondary, lineHeight: 18 }} numberOfLines={3}>
+                        <Text variant="bodySmall" style={{ color: colors.textSecondary, lineHeight: 18, fontFamily: 'Inter_400Regular' }} numberOfLines={3}>
                           {excerpt.text}
                         </Text>
-                        <Text style={{ color: colors.textTertiary, fontSize: 11, marginTop: 4 }}>
+                        <Text style={{ color: colors.textTertiary, fontSize: 11, marginTop: 4, fontFamily: 'Inter_400Regular' }}>
                           Fonte: {excerpt.content_title}
                         </Text>
                       </View>
@@ -252,7 +256,7 @@ export default function HomeScreen() {
             ))}
 
             <Pressable onPress={clearSearch} style={styles.clearSearchBtn}>
-              <Text style={{ color: colors.textSecondary, fontSize: 14 }}>Limpar busca e voltar</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 14, fontFamily: 'Inter_400Regular' }}>Limpar busca e voltar</Text>
             </Pressable>
           </View>
         )}
@@ -262,7 +266,7 @@ export default function HomeScreen() {
           <>
             {recentConversations.length > 0 && (
               <View style={styles.section}>
-                <Text variant="titleMedium" style={[styles.sectionTitle, { color: colors.text }]}>
+                <Text variant="titleMedium" style={[styles.sectionTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
                   Conversas Recentes
                 </Text>
                 {recentConversations.map(conv => (
@@ -272,10 +276,10 @@ export default function HomeScreen() {
                     onPress={() => router.push(`/conversation/${conv.id}`)}
                   >
                     <Card.Content>
-                      <Text variant="titleSmall" style={{ fontWeight: 'bold', color: colors.text, marginBottom: 4 }}>
+                      <Text variant="titleSmall" style={{ fontFamily: 'Inter_700Bold', color: colors.text, marginBottom: 4 }}>
                         {conv.mentor_name}
                       </Text>
-                      <Text variant="bodySmall" numberOfLines={2} style={{ color: colors.textSecondary }}>
+                      <Text variant="bodySmall" numberOfLines={2} style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular' }}>
                         {conv.last_message}
                       </Text>
                     </Card.Content>
@@ -285,14 +289,14 @@ export default function HomeScreen() {
             )}
 
             <View style={styles.section}>
-              <Text variant="titleMedium" style={[styles.sectionTitle, { color: colors.text }]}>
-                Mentores Disponiveis
+              <Text variant="titleMedium" style={[styles.sectionTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+                Mentores Disponíveis
               </Text>
               {mentors.length === 0 ? (
                 <EmptyState
                   icon="account-search-outline"
-                  title="Nenhum mentor disponivel"
-                  description="Ainda nao ha mentores cadastrados na plataforma."
+                  title="Nenhum mentor disponível"
+                  description="Ainda não há mentores cadastrados na plataforma."
                 />
               ) : (
                 mentors.map(mentor => (
@@ -307,21 +311,31 @@ export default function HomeScreen() {
                         size={56}
                         label={mentor.full_name.substring(0, 2).toUpperCase()}
                         style={[styles.avatar, { backgroundColor: colors.primary }]}
+                        labelStyle={{ fontFamily: 'Inter_700Bold' }}
                       />
                       <View style={styles.mentorInfo}>
-                        <Text variant="titleMedium" style={{ fontWeight: 'bold', color: colors.text, marginBottom: 4 }}>
+                        <Text variant="titleMedium" style={{ fontFamily: 'Inter_700Bold', color: colors.text, marginBottom: 4 }}>
                           {mentor.full_name}
                         </Text>
                         <Chip mode="flat" style={[styles.specialtyChip, { backgroundColor: colors.primaryLight }]}
-                          textStyle={{ color: colors.primary }}>
+                          textStyle={{ color: colors.primary, fontFamily: 'Inter_700Bold' }}>
                           {mentor.specialty}
                         </Chip>
                         {mentor.bio && (
-                          <Text variant="bodySmall" numberOfLines={2} style={{ color: colors.textSecondary, marginTop: 4 }}>
+                          <Text variant="bodySmall" numberOfLines={2} style={{ color: colors.textSecondary, marginTop: 4, fontFamily: 'Inter_400Regular' }}>
                             {mentor.bio}
                           </Text>
                         )}
                       </View>
+                      <Button 
+                         mode="contained" 
+                         compact 
+                         style={{ backgroundColor: colors.primary, borderRadius: 20 }}
+                         labelStyle={{ fontFamily: 'Inter_700Bold', fontSize: 12 }}
+                         onPress={() => router.push(`/chat/${mentor.id}`)}
+                      >
+                        Consultar
+                      </Button>
                     </Card.Content>
                   </Card>
                 ))
@@ -345,18 +359,21 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+    paddingBottom: 32,
   },
   header: {
     marginBottom: 20,
+    marginTop: 8,
   },
   headerTitle: {
-    fontWeight: 'bold',
     marginBottom: 4,
   },
-  searchBar: {
+  searchContainer: {
     marginBottom: 8,
     borderRadius: 12,
-    elevation: 2,
+  },
+  searchBar: {
+    borderRadius: 12,
   },
   searchHint: {
     fontSize: 12,
@@ -373,7 +390,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   searchResultsTitle: {
-    fontWeight: 'bold',
   },
   searchResultCard: {
     marginBottom: 12,
@@ -399,11 +415,9 @@ const styles = StyleSheet.create({
   },
   relevanceScore: {
     fontSize: 18,
-    fontWeight: 'bold',
   },
   relevanceLabel: {
     fontSize: 11,
-    fontWeight: '600',
   },
   resultDivider: {
     marginVertical: 12,
@@ -429,8 +443,8 @@ const styles = StyleSheet.create({
   },
   chatButtonText: {
     color: '#ffffff',
-    fontWeight: '600',
     fontSize: 14,
+    fontFamily: 'Inter_700Bold'
   },
   clearSearchBtn: {
     alignItems: 'center',
@@ -441,28 +455,33 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionTitle: {
-    fontWeight: 'bold',
     marginBottom: 12,
   },
   conversationCard: {
     marginBottom: 8,
+    borderRadius: 12,
+    elevation: 1,
   },
   mentorCard: {
     marginBottom: 12,
+    borderRadius: 12,
+    elevation: 2,
   },
   mentorCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatar: {
-    marginRight: 16,
+    marginRight: 12,
   },
   mentorInfo: {
     flex: 1,
+    marginRight: 8,
   },
   specialtyChip: {
     alignSelf: 'flex-start',
     marginTop: 4,
     marginBottom: 4,
+    height: 24,
   },
 });

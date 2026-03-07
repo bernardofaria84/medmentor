@@ -44,7 +44,7 @@
   "seed_data_creation": "No seed data created",
   "retest_needed": true,
   "should_main_agent_self_test": true,
-  "context_for_next_testing_agent": "React Native Expo web app. URL: https://medmentor-stable.preview.emergentagent.com. data-testid on Pressable components do NOT render in DOM - use text selectors or position-based clicks. Login: subscriber=goulart.faria@gmail.com/MedMentor@2025. Onboarding key: @medmentor_onboarding_seen in localStorage. Metro bundler uses CI=true mode (hot=false) - changes require server restart to take effect. After restart, wait ~30s for bundle to rebuild. Fixed 2 critical bugs in conversationId.tsx. Tab order bug still needs fixing in _layout.tsx.",
+  "context_for_next_testing_agent": "React Native Expo web app. URL: https://medmentor-rebrand.preview.emergentagent.com. data-testid on Pressable components do NOT render in DOM - use text selectors or position-based clicks. Login: subscriber=goulart.faria@gmail.com/MedMentor@2025. Onboarding key: @medmentor_onboarding_seen in localStorage. Metro bundler uses CI=true mode (hot=false) - changes require server restart to take effect. After restart, wait ~30s for bundle to rebuild. Fixed 2 critical bugs in conversationId.tsx. Tab order bug still needs fixing in _layout.tsx.",
   "features_tested": {
     "onboarding_first_login": {
       "status": "PASS",
