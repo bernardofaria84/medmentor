@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
-import { Text, Card, Avatar, Chip, ActivityIndicator, Searchbar, Divider, IconButton, Surface } from 'react-native-paper';
+import { Text, Card, Avatar, Chip, ActivityIndicator, Searchbar, Divider, IconButton, Surface, Button } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { getMentors, getConversations } from '../../services/api';
 import api from '../../services/api';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import EmptyState from '../../components/EmptyState';
 
 interface Mentor {
@@ -44,6 +45,20 @@ export default function HomeScreen() {
   const [searchError, setSearchError] = useState<string | null>(null);
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { user } = useAuth();
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Bom dia';
+    if (hour < 18) return 'Boa tarde';
+    return 'Boa noite';
+  };
+
+  const getDoctorFirstName = () => {
+    if (!user?.full_name) return '';
+    const parts = user.full_name.replace(/^(Dr\.|Dra\.|Dr |Dra )/i, '').trim().split(' ');
+    return parts[0] || '';
+  };
 
   useEffect(() => {
     loadData();
@@ -133,11 +148,11 @@ export default function HomeScreen() {
         }
       >
         <View style={styles.header}>
-          <Text variant="headlineMedium" style={[styles.headerTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
-            Bem-vindo ao MedMentor
+          <Text variant="headlineLarge" style={[styles.headerGreeting, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
+            {getGreeting()}{getDoctorFirstName() ? `, Dr. ${getDoctorFirstName()}` : ''}
           </Text>
           <Text variant="bodyMedium" style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular' }}>
-            Converse com especialistas renomados através de IA
+            O conhecimento do especialista, na palma da sua mão.
           </Text>
         </View>
 
@@ -299,46 +314,44 @@ export default function HomeScreen() {
                   description="Ainda não há mentores cadastrados na plataforma."
                 />
               ) : (
-                mentors.map(mentor => (
-                  <Card
-                    key={mentor.id}
-                    style={[styles.mentorCard, { backgroundColor: colors.card }]}
-                    onPress={() => router.push(`/chat/${mentor.id}`)}
-                    data-testid={`mentor-card-${mentor.id}`}
-                  >
-                    <Card.Content style={styles.mentorCardContent}>
-                      <Avatar.Text
-                        size={56}
-                        label={mentor.full_name.substring(0, 2).toUpperCase()}
-                        style={[styles.avatar, { backgroundColor: colors.primary }]}
-                        labelStyle={{ fontFamily: 'Inter_700Bold' }}
-                      />
-                      <View style={styles.mentorInfo}>
-                        <Text variant="titleMedium" style={{ fontFamily: 'Inter_700Bold', color: colors.text, marginBottom: 4 }}>
+                <View style={styles.mentorGrid}>
+                  {mentors.map(mentor => (
+                    <Card
+                      key={mentor.id}
+                      style={[styles.mentorCard, { backgroundColor: colors.card }]}
+                      onPress={() => router.push(`/chat/${mentor.id}`)}
+                      data-testid={`mentor-card-${mentor.id}`}
+                    >
+                      <Card.Content style={styles.mentorCardContent}>
+                        <Avatar.Text
+                          size={64}
+                          label={mentor.full_name.substring(0, 2).toUpperCase()}
+                          style={[styles.avatar, { backgroundColor: colors.primary }]}
+                          labelStyle={{ fontFamily: 'Inter_700Bold' }}
+                        />
+                        <Text
+                          variant="titleSmall"
+                          style={{ fontFamily: 'Inter_700Bold', color: colors.text, marginTop: 10, textAlign: 'center' }}
+                          numberOfLines={2}
+                        >
                           {mentor.full_name}
                         </Text>
-                        <Chip mode="flat" style={[styles.specialtyChip, { backgroundColor: colors.primaryLight }]}
-                          textStyle={{ color: colors.primary, fontFamily: 'Inter_700Bold' }}>
-                          {mentor.specialty}
-                        </Chip>
-                        {mentor.bio && (
-                          <Text variant="bodySmall" numberOfLines={2} style={{ color: colors.textSecondary, marginTop: 4, fontFamily: 'Inter_400Regular' }}>
-                            {mentor.bio}
+                        <View style={[styles.specialtyTag, { backgroundColor: colors.primaryLight }]}>
+                          <Text style={{ color: colors.primary, fontSize: 11, fontFamily: 'Inter_700Bold' }} numberOfLines={1}>
+                            {mentor.specialty}
                           </Text>
-                        )}
-                      </View>
-                      <Button 
-                         mode="contained" 
-                         compact 
-                         style={{ backgroundColor: colors.primary, borderRadius: 20 }}
-                         labelStyle={{ fontFamily: 'Inter_700Bold', fontSize: 12 }}
-                         onPress={() => router.push(`/chat/${mentor.id}`)}
-                      >
-                        Consultar
-                      </Button>
-                    </Card.Content>
-                  </Card>
-                ))
+                        </View>
+                        <Pressable
+                          style={[styles.consultBtn, { backgroundColor: colors.primary }]}
+                          onPress={() => router.push(`/chat/${mentor.id}`)}
+                          data-testid={`consult-btn-${mentor.id}`}
+                        >
+                          <Text style={styles.consultBtnText}>Consultar</Text>
+                        </Pressable>
+                      </Card.Content>
+                    </Card>
+                  ))}
+                </View>
               )}
             </View>
           </>
@@ -365,7 +378,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 8,
   },
-  headerTitle: {
+  headerGreeting: {
     marginBottom: 4,
   },
   searchContainer: {
@@ -462,26 +475,44 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     elevation: 1,
   },
+  mentorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
   mentorCard: {
-    marginBottom: 12,
-    borderRadius: 12,
+    flex: 1,
+    minWidth: 140,
+    maxWidth: '48%',
+    borderRadius: 16,
     elevation: 2,
   },
   mentorCardContent: {
-    flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 16,
   },
   avatar: {
-    marginRight: 12,
-  },
-  mentorInfo: {
-    flex: 1,
-    marginRight: 8,
-  },
-  specialtyChip: {
-    alignSelf: 'flex-start',
-    marginTop: 4,
     marginBottom: 4,
-    height: 24,
+  },
+  specialtyTag: {
+    marginTop: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignItems: 'center',
+    maxWidth: '100%',
+  },
+  consultBtn: {
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+  },
+  consultBtnText: {
+    color: '#ffffff',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 13,
   },
 });

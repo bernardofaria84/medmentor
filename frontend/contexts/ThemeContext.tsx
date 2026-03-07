@@ -12,6 +12,7 @@ const LIGHT_COLORS = {
   textTertiary: '#9CA3AF',
   primary: '#0D7377', // Brand Teal
   primaryLight: '#E6F4F5', // Light Teal
+  secondary: '#00B4D8', // Cyan Accent
   border: '#E5E7EB',
   card: '#FFFFFF',
   success: '#10B981',
@@ -36,8 +37,9 @@ const DARK_COLORS = {
   text: '#F1F5F9',
   textSecondary: '#94A3B8',
   textTertiary: '#64748B',
-  primary: '#0D7377', // Keep Brand Teal (maybe adjust for contrast if needed)
+  primary: '#0D7377', // Keep Brand Teal
   primaryLight: '#115E59', // Darker Teal for dark mode backgrounds
+  secondary: '#00B4D8', // Cyan Accent
   border: '#334155',
   card: '#1E293B',
   success: '#10B981',

@@ -20,6 +20,7 @@ import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import { useBookmarks } from '../../hooks/useBookmarks';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { WhisperSpinner } from '../../components/WhisperSpinner';
 
 function exportSOAPAsPDF(soapSummary: string) {
   if (Platform.OS === 'web') {
@@ -300,8 +301,8 @@ export default function ConversationScreen() {
 
           {isTranscribing && (
             <View style={[styles.transcribingBar, { backgroundColor: colors.primaryLight }]}>
-              <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={[styles.transcribingText, { color: colors.primary }]}>Transcrevendo audio...</Text>
+              <WhisperSpinner />
+              <Text style={[styles.transcribingText, { color: colors.primary, fontFamily: 'Inter_400Regular' }]}>Transcrevendo áudio...</Text>
             </View>
           )}
 
