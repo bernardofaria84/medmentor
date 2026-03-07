@@ -110,8 +110,10 @@ async def chat_with_mentor(chat_request: ChatRequest, current_user: dict = Depen
     ps = mentor.get("profile_status", "INACTIVE")
     if ps == "INACTIVE":
         raise HTTPException(status_code=400, detail="O bot de IA deste mentor esta inativo.")
-    elif ps == "PENDING_APPROVAL":
-        raise HTTPException(status_code=400, detail="O perfil do bot esta aguardando aprovacao.")
+    elif ps == "PENDING_APPROVAL" and not mentor.get("agent_profile"):
+        # Block only if there is NO previously-approved profile to fall back to.
+        # If agent_profile exists, we continue using the last approved version.
+        raise HTTPException(status_code=400, detail="O perfil do bot ainda nao foi aprovado pelo mentor.")
 
     if chat_request.conversation_id:
         conv = await db.conversations.find_one({"_id": chat_request.conversation_id})
