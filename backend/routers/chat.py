@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime
 from typing import List
 from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
+from pydantic import BaseModel
 
 from dependencies import db, logger
 from models import (
@@ -263,12 +264,23 @@ async def summarize_conversation(conversation_id: str, current_user: dict = Depe
 
 # ---------- feedback ----------
 
+class FeedbackRequest(BaseModel):
+    feedback: FeedbackType
+
+
 @router.post("/messages/{message_id}/feedback")
-async def update_message_feedback(message_id: str, feedback: FeedbackType, current_user: dict = Depends(get_current_user)):
+async def update_message_feedback(
+    message_id: str,
+    body: FeedbackRequest = None,
+    feedback: FeedbackType = None,
+    current_user: dict = Depends(get_current_user),
+):
+    # Accept feedback from JSON body (frontend) OR query param (legacy tests)
+    resolved_feedback = (body.feedback if body else None) or feedback
     message = await db.messages.find_one({"_id": message_id})
     if not message:
         raise HTTPException(status_code=404, detail="Message not found")
-    await db.messages.update_one({"_id": message_id}, {"$set": {"feedback": feedback}})
+    await db.messages.update_one({"_id": message_id}, {"$set": {"feedback": resolved_feedback}})
     try:
         conv = await db.conversations.find_one({"_id": message["conversation_id"]})
         question_text = ""
@@ -283,7 +295,7 @@ async def update_message_feedback(message_id: str, feedback: FeedbackType, curre
             "_id": str(uuid.uuid4()), "message_id": message_id,
             "conversation_id": message["conversation_id"],
             "mentor_id": conv["mentor_id"] if conv else "unknown",
-            "user_id": current_user["user_id"], "feedback_type": feedback,
+            "user_id": current_user["user_id"], "feedback_type": resolved_feedback,
             "feedback_at": datetime.utcnow(), "question": question_text,
             "response_text": message.get("content", ""),
             "context_chunks_ids": [c.get("source_id", "") for c in message.get("citations", [])],

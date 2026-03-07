@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform, TouchableOpacity, Image } from 'react-native';
 import { Text, Card, TextInput, Button, ActivityIndicator, Avatar, Portal, Dialog, Snackbar, Switch } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppTheme } from '../../contexts/ThemeContext';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 
 interface Profile {
   id: string;
@@ -25,6 +28,7 @@ export default function MentorProfile() {
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [approving, setApproving] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -53,6 +57,69 @@ export default function MentorProfile() {
       showSnackbar('Erro ao carregar perfil', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async () => {
+    try {
+      if (Platform.OS === 'web') {
+        // Web: use file input
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/jpeg,image/png,image/webp';
+        input.onchange = async (e: any) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          setUploadingAvatar(true);
+          try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await api.post('/api/mentors/profile/avatar', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            setProfile(prev => prev ? { ...prev, avatar_url: res.data.avatar_url } : prev);
+            showSnackbar('Foto atualizada com sucesso!', 'success');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } catch (err: any) {
+            showSnackbar(err.response?.data?.detail || 'Erro ao enviar foto', 'error');
+          } finally {
+            setUploadingAvatar(false);
+          }
+        };
+        input.click();
+      } else {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          showSnackbar('Permissão negada para acessar a galeria', 'error');
+          return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets[0]) {
+          setUploadingAvatar(true);
+          const asset = result.assets[0];
+          const formData = new FormData();
+          formData.append('file', { uri: asset.uri, type: 'image/jpeg', name: 'avatar.jpg' } as any);
+          try {
+            const res = await api.post('/api/mentors/profile/avatar', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            setProfile(prev => prev ? { ...prev, avatar_url: res.data.avatar_url } : prev);
+            showSnackbar('Foto atualizada com sucesso!', 'success');
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } catch (err: any) {
+            showSnackbar(err.response?.data?.detail || 'Erro ao enviar foto', 'error');
+          } finally {
+            setUploadingAvatar(false);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Avatar upload error:', err);
     }
   };
 
@@ -223,12 +290,29 @@ export default function MentorProfile() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Card style={[styles.avatarCard, { backgroundColor: colors.card }]}>
           <Card.Content style={styles.avatarContent}>
-            <Avatar.Text
-              size={100}
-              label={profile.full_name.substring(0, 2).toUpperCase()}
-              style={{ backgroundColor: colors.primary, marginBottom: 16 }}
-            />
-            <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: colors.text, marginBottom: 4 }}>
+            {/* Avatar with edit button */}
+            <TouchableOpacity onPress={handleAvatarUpload} disabled={uploadingAvatar} data-testid="mentor-avatar-upload">
+              <View style={{ position: 'relative' }}>
+                {profile.avatar_url ? (
+                  <Image
+                    source={{ uri: profile.avatar_url }}
+                    style={{ width: 100, height: 100, borderRadius: 50, marginBottom: 4 }}
+                  />
+                ) : (
+                  <Avatar.Text
+                    size={100}
+                    label={profile.full_name.substring(0, 2).toUpperCase()}
+                    style={{ backgroundColor: colors.primary, marginBottom: 4 }}
+                  />
+                )}
+                <View style={{ position: 'absolute', bottom: 4, right: 0, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }}>
+                  {uploadingAvatar
+                    ? <ActivityIndicator size={14} color="#fff" />
+                    : <MaterialCommunityIcons name="camera" size={14} color="#fff" />}
+                </View>
+              </View>
+            </TouchableOpacity>
+            <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: colors.text, marginBottom: 4, marginTop: 8 }}>
               {profile.full_name}
             </Text>
             <Text variant="bodyMedium" style={{ color: colors.textSecondary }}>

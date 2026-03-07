@@ -22,19 +22,36 @@ interface ImpactometerData {
   recent_queries: { question: string; sent_at: string }[];
 }
 
+interface AiInsight { titulo: string; descricao: string; icone: string; }
+
 export default function MentorDashboard() {
   const [data, setData] = useState<ImpactometerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [aiInsights, setAiInsights] = useState<AiInsight[]>([]);
+  const [loadingInsights, setLoadingInsights] = useState(false);
   const router = useRouter();
   const { user, logout } = useAuth();
   const { colors } = useAppTheme();
 
   useEffect(() => {
     loadData();
+    loadAiInsights();
   }, []);
+
+  const loadAiInsights = async () => {
+    try {
+      setLoadingInsights(true);
+      const res = await api.get('/api/mentors/analytics/ai-insights');
+      setAiInsights(res.data.insights || []);
+    } catch (e) {
+      // silent — insights are optional
+    } finally {
+      setLoadingInsights(false);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -52,7 +69,7 @@ export default function MentorDashboard() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadData();
+    await Promise.all([loadData(), loadAiInsights()]);
     setRefreshing(false);
   }, []);
 
@@ -359,6 +376,38 @@ export default function MentorDashboard() {
             </Card.Content>
           </Card>
         </Pressable>
+
+        <View style={{ height: 32 }} />
+
+        {/* AI Insights Card (Melhoria 9) */}
+        <Card style={[{ borderRadius: 16, marginBottom: 16, backgroundColor: colors.surface }]} elevation={2} data-testid="ai-insights-card">
+          <Card.Content>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
+              <MaterialCommunityIcons name="lightbulb-outline" size={22} color={colors.primary} />
+              <Text variant="titleMedium" style={{ marginLeft: 8, fontFamily: 'Inter_700Bold', color: colors.text }}>
+                Insights de IA
+              </Text>
+              {loadingInsights && <ActivityIndicator size="small" color={colors.primary} style={{ marginLeft: 8 }} />}
+            </View>
+            {aiInsights.length === 0 && !loadingInsights ? (
+              <Text style={{ color: colors.textSecondary, fontFamily: 'Inter_400Regular', textAlign: 'center', paddingVertical: 16 }}>
+                Sem dados suficientes ainda. Os insights aparecerão após mais conversas com seus médicos.
+              </Text>
+            ) : (
+              aiInsights.map((insight, idx) => (
+                <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14, paddingBottom: 14, borderBottomWidth: idx < aiInsights.length - 1 ? 1 : 0, borderBottomColor: colors.border }}>
+                  <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginRight: 12, flexShrink: 0 }}>
+                    <MaterialCommunityIcons name={(insight.icone || 'lightbulb-outline') as any} size={18} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: 'Inter_700Bold', color: colors.text, marginBottom: 2 }}>{insight.titulo}</Text>
+                    <Text style={{ fontFamily: 'Inter_400Regular', color: colors.textSecondary, fontSize: 13 }}>{insight.descricao}</Text>
+                  </View>
+                </View>
+              ))
+            )}
+          </Card.Content>
+        </Card>
 
         <View style={{ height: 32 }} />
       </ScrollView>

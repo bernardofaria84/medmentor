@@ -102,6 +102,19 @@ Plataforma de mentoria médica com IA que conecta médicos assinantes a mentores
 - [x] **Tipografia**: Inter Bold + Inter Regular via @expo-google-fonts/inter
 - [x] **Todas as telas**: cores teal propagadas via ThemeContext
 
+### 10 Melhorias SUPER PROMPT (2026-03-07)
+- [x] **Melhoria 1**: MessageActionBar — Like/Dislike + API POST /api/messages/{id}/feedback
+- [x] **Melhoria 2**: Compartilhar resposta — modal com Share nativo (texto/WhatsApp) + PDF via expo-print
+- [x] **Melhoria 3**: Novos formatos de upload (backend + frontend) — PDF, DOCX, MP4, MP3, WAV, M4A
+- [x] **Melhoria 4**: Foto de perfil do mentor — POST /api/mentors/profile/avatar + display nos cards da home
+- [x] **Melhoria 5+8**: TypingBubble animada (3 pontos bounce) antes da resposta + Copy button + MessageActionBar
+- [x] **Melhoria 6**: Haptic feedback consistente em todas as ações críticas (expo-haptics)
+- [x] **Melhoria 7**: Transições suaves — slide_from_right no Stack root, slide_from_bottom no chat, fade no login
+- [x] **Melhoria 9**: AI Insights Dashboard — GET /api/mentors/analytics/ai-insights + card no dashboard
+- [x] **Melhoria 10**: Embedding model atualizado text-embedding-ada-002 → text-embedding-3-small
+- [x] **Script**: /app/backend/scripts/migrate_embeddings.py para regenerar embeddings existentes
+- [x] **Fix**: ContentType enum adicionado DOCX
+
 ## Backlog
 
 ### P1 - Alta Prioridade

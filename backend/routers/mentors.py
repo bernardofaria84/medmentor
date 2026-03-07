@@ -1,6 +1,8 @@
 """Mentors router: listing, profile, content upload/manage, bot profile approval."""
 import uuid
 import io
+import os
+import base64
 from datetime import datetime
 from typing import List
 from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
@@ -96,6 +98,36 @@ async def update_mentor_profile(
     return {"message": "Profile updated successfully"}
 
 
+@router.post("/mentors/profile/avatar")
+async def upload_mentor_avatar(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload mentor profile avatar — stored as base64 data URL in MongoDB."""
+    if current_user["user_type"] != "mentor":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    allowed_mime = {"image/jpeg", "image/png", "image/webp"}
+    content_type = file.content_type or ""
+    if content_type not in allowed_mime:
+        raise HTTPException(status_code=400, detail="Tipo de imagem nao suportado. Use JPEG, PNG ou WebP.")
+
+    file_content = await file.read()
+    if len(file_content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Imagem muito grande. Maximo: 5MB")
+
+    b64 = base64.b64encode(file_content).decode("utf-8")
+    ext = {"image/jpeg": "jpeg", "image/png": "png", "image/webp": "webp"}.get(content_type, "jpeg")
+    avatar_url = f"data:{content_type};base64,{b64}"
+
+    await db.mentors.update_one(
+        {"_id": current_user["user_id"]},
+        {"$set": {"avatar_url": avatar_url}},
+    )
+    logger.info(f"Mentor {current_user['user_id']} updated avatar ({ext}, {len(file_content)/1024:.1f}KB)")
+    return {"avatar_url": avatar_url}
+
+
 # ---------- bot profile approval ----------
 
 @router.post("/mentor/profile/approve")
@@ -134,97 +166,163 @@ async def upload_content(
 ):
     if current_user["user_type"] != "mentor":
         raise HTTPException(status_code=403, detail="Access denied")
-    if not file.filename or not file.filename.lower().endswith('.pdf'):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+
+    ALLOWED_TYPES = {
+        "application/pdf": "PDF",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "DOCX",
+        "video/mp4": "VIDEO",
+        "audio/mpeg": "AUDIO",
+        "audio/mp3": "AUDIO",
+        "audio/wav": "AUDIO",
+        "audio/m4a": "AUDIO",
+        "audio/ogg": "AUDIO",
+        "audio/flac": "AUDIO",
+    }
+    ALLOWED_EXTENSIONS = {".pdf", ".docx", ".mp4", ".mp3", ".wav", ".m4a", ".ogg", ".flac"}
+
+    filename_lower = (file.filename or "").lower()
+    file_ext = "." + filename_lower.rsplit(".", 1)[-1] if "." in filename_lower else ""
+    content_type = file.content_type or ""
+
+    # Determine file type
+    file_type = ALLOWED_TYPES.get(content_type)
+    if not file_type:
+        for ext in ALLOWED_EXTENSIONS:
+            if filename_lower.endswith(ext):
+                if ext == ".docx":
+                    file_type = "DOCX"
+                elif ext == ".mp4":
+                    file_type = "VIDEO"
+                elif ext in {".mp3", ".wav", ".m4a", ".ogg", ".flac"}:
+                    file_type = "AUDIO"
+                elif ext == ".pdf":
+                    file_type = "PDF"
+                break
+
+    if not file_type:
+        raise HTTPException(status_code=400, detail=f"Formato nao suportado. Formatos aceitos: PDF, DOCX, MP4, MP3, WAV, M4A.")
 
     try:
         file_content = await file.read()
         content_id = str(uuid.uuid4())
-        title = file.filename.rsplit('.', 1)[0] if file.filename else "Untitled"
+        title = file.filename.rsplit(".", 1)[0] if file.filename and "." in file.filename else (file.filename or "Untitled")
 
         content_doc = {
             "_id": content_id,
             "mentor_id": current_user["user_id"],
             "title": title,
             "filename": file.filename,
-            "content_type": "PDF",
+            "content_type": file_type,
+            "file_type": file_type,
             "status": "PROCESSING",
             "uploaded_at": datetime.utcnow(),
         }
         await db.mentor_content.insert_one(content_doc)
 
         # Store in GridFS
-        file_id = fs.put(file_content, filename=file.filename, content_type="application/pdf")
+        fs.put(file_content, filename=file.filename, content_type=content_type)
 
-        # Process PDF
-        try:
-            import PyPDF2
-            pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
-            pdf_text = ""
-            for page in pdf_reader.pages:
-                pdf_text += page.extract_text() or ""
-
-            if not pdf_text.strip():
-                raise HTTPException(status_code=400, detail="Could not extract text from PDF")
-
-            await db.mentor_content.update_one(
-                {"_id": content_id},
-                {"$set": {"processed_text": pdf_text, "gridfs_file_id": str(file_id)}}
-            )
-
-            # Chunk and embed
-            chunks_processed = await rag_service.process_pdf_content(
-                pdf_text=pdf_text,
-                mentor_id=current_user["user_id"],
-                content_id=content_id,
-                title=title,
-                db=db,
-            )
-
-            # Generate / update AI agent profile
+        # Extract text based on file type
+        extracted_text = ""
+        if file_type == "PDF":
             try:
-                mentor_doc = await db.mentors.find_one({"_id": current_user["user_id"]})
-                existing_profile = mentor_doc.get("agent_profile")
-                profile_data = await profile_service.analyze_content_and_generate_profile(
-                    content_text=pdf_text,
-                    mentor_name=mentor_doc["full_name"],
-                    mentor_specialty=mentor_doc["specialty"],
-                    existing_profile=existing_profile,
-                )
-                await db.mentors.update_one(
-                    {"_id": current_user["user_id"]},
-                    {"$set": {
-                        "agent_profile_pending": profile_data["profile_text"],
-                        "style_traits_pending": profile_data["style_traits"],
-                        "profile_status": "PENDING_APPROVAL",
-                        "profile_updated_at": datetime.utcnow(),
-                    }}
-                )
-                logger.info(f"AI agent profile PENDING APPROVAL (source: {profile_data['analysis_source']})")
-            except Exception as profile_error:
-                logger.error(f"Error generating agent profile: {profile_error}")
+                import PyPDF2
+                pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
+                for page in pdf_reader.pages:
+                    extracted_text += page.extract_text() or ""
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Erro ao processar PDF: {str(e)}")
+            if not extracted_text.strip():
+                raise HTTPException(status_code=400, detail="Nao foi possivel extrair texto do PDF")
 
-            await db.mentor_content.update_one(
-                {"_id": content_id}, {"$set": {"status": "COMPLETED"}}
-            )
-            logger.info(f"Processed {chunks_processed} chunks for content {content_id}")
+        elif file_type == "DOCX":
+            try:
+                import docx as python_docx
+                doc = python_docx.Document(io.BytesIO(file_content))
+                extracted_text = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Erro ao processar DOCX: {str(e)}")
+            if not extracted_text.strip():
+                raise HTTPException(status_code=400, detail="Nao foi possivel extrair texto do DOCX")
 
-        except Exception as e:
-            logger.error(f"Error processing PDF: {e}")
-            await db.mentor_content.update_one(
-                {"_id": content_id}, {"$set": {"status": "ERROR"}}
+        elif file_type in ("VIDEO", "AUDIO"):
+            try:
+                from openai import OpenAI
+                key = os.environ.get("OPENAI_API_KEY")
+                if not key:
+                    raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+                client = OpenAI(api_key=key)
+                audio_file = io.BytesIO(file_content)
+                audio_file.name = file.filename or f"audio{file_ext}"
+                transcript = client.audio.transcriptions.create(
+                    model=os.environ.get("WHISPER_MODEL", "whisper-1"),
+                    file=audio_file,
+                    language="pt",
+                    response_format="text",
+                )
+                extracted_text = str(transcript).strip() if transcript else ""
+            except HTTPException:
+                raise
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Erro na transcricao do arquivo: {str(e)}")
+            if not extracted_text.strip():
+                raise HTTPException(status_code=400, detail="Nao foi possivel transcrever o arquivo de audio/video")
+
+        await db.mentor_content.update_one(
+            {"_id": content_id},
+            {"$set": {"processed_text": extracted_text[:5000]}}
+        )
+
+        # Chunk and embed
+        chunks_processed = await rag_service.process_pdf_content(
+            pdf_text=extracted_text,
+            mentor_id=current_user["user_id"],
+            content_id=content_id,
+            title=title,
+            db=db,
+        )
+
+        # Generate / update AI agent profile
+        try:
+            mentor_doc = await db.mentors.find_one({"_id": current_user["user_id"]})
+            existing_profile = mentor_doc.get("agent_profile")
+            profile_data = await profile_service.analyze_content_and_generate_profile(
+                content_text=extracted_text,
+                mentor_name=mentor_doc["full_name"],
+                mentor_specialty=mentor_doc["specialty"],
+                existing_profile=existing_profile,
             )
-            raise HTTPException(status_code=500, detail=f"Error processing PDF: {str(e)}")
+            await db.mentors.update_one(
+                {"_id": current_user["user_id"]},
+                {"$set": {
+                    "agent_profile_pending": profile_data["profile_text"],
+                    "style_traits_pending": profile_data["style_traits"],
+                    "profile_status": "PENDING_APPROVAL",
+                    "profile_updated_at": datetime.utcnow(),
+                }}
+            )
+            logger.info(f"AI agent profile PENDING APPROVAL (source: {profile_data['analysis_source']})")
+        except Exception as profile_error:
+            logger.error(f"Error generating agent profile: {profile_error}")
+
+        await db.mentor_content.update_one(
+            {"_id": content_id}, {"$set": {"status": "COMPLETED"}}
+        )
+        logger.info(f"Processed {chunks_processed} chunks for content {content_id} (type: {file_type})")
 
         return ContentUploadResponse(
             content_id=content_id, title=title,
             status=ContentStatus.COMPLETED,
-            message=f"Content uploaded and processed successfully. {chunks_processed} chunks indexed.",
+            message=f"Conteudo enviado e processado com sucesso. {chunks_processed} chunks indexados.",
         )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error uploading content: {e}")
+        if 'content_id' in locals():
+            await db.mentor_content.update_one(
+                {"_id": content_id}, {"$set": {"status": "ERROR"}}
+            )
         raise HTTPException(status_code=500, detail=str(e))
 
 

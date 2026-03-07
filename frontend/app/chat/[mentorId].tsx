@@ -16,9 +16,11 @@ import Markdown from 'react-native-markdown-display';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { useAppTheme } from '../../contexts/ThemeContext';
 import EmptyState from '../../components/EmptyState';
-import { useBookmarks } from '../../hooks/useBookmarks';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { WhisperSpinner } from '../../components/WhisperSpinner';
+import { MessageActionBar } from '../../components/MessageActionBar';
+import { TypingBubble } from '../../components/TypingBubble';
+import * as Haptics from 'expo-haptics';
 
 interface Message {
   id: string;
@@ -32,12 +34,12 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [mentorName, setMentorName] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
   const router = useRouter();
   const { colors } = useAppTheme();
-  const { isBookmarked, toggleBookmark } = useBookmarks();
 
   const {
     isRecording,
@@ -85,6 +87,8 @@ export default function ChatScreen() {
   const handleSend = async () => {
     if (!inputText.trim() || loading) return;
 
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     const userMessage: Message = {
       id: Date.now().toString(),
       sender_type: 'USER',
@@ -95,6 +99,7 @@ export default function ChatScreen() {
     setMessages(prev => [...prev, userMessage]);
     setInputText('');
     setLoading(true);
+    setIsTyping(true);
     Keyboard.dismiss();
 
     try {
@@ -115,9 +120,12 @@ export default function ChatScreen() {
         citations: response.citations || [],
       };
 
+      setIsTyping(false);
       setMessages(prev => [...prev, botMessage]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
       console.error('Error sending message:', error);
+      setIsTyping(false);
       const errorMessage: Message = {
         id: Date.now().toString(),
         sender_type: 'MENTOR_BOT',
@@ -125,6 +133,7 @@ export default function ChatScreen() {
         citations: [],
       };
       setMessages(prev => [...prev, errorMessage]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setLoading(false);
     }
@@ -209,35 +218,23 @@ export default function ChatScreen() {
                         ))}
                       </View>
                     )}
-                    {message.sender_type === 'MENTOR_BOT' && (
-                      <TouchableOpacity
-                        onPress={() => toggleBookmark({
-                          messageId: message.id,
-                          content: message.content,
-                          mentorName: mentorName,
-                          conversationId: '',
-                        })}
-                        style={styles.bookmarkBtn}
-                        data-testid={`bookmark-msg-${message.id}`}
-                      >
-                        <MaterialCommunityIcons
-                          name={isBookmarked(message.id) ? 'bookmark' : 'bookmark-outline'}
-                          size={16}
-                          color={isBookmarked(message.id) ? '#f59e0b' : colors.textTertiary}
-                        />
-                      </TouchableOpacity>
-                    )}
                   </Card.Content>
                 </Card>
+                {message.sender_type === 'MENTOR_BOT' && (
+                  <MessageActionBar
+                    messageId={message.id}
+                    content={message.content}
+                    mentorName={mentorName}
+                    conversationId={conversationId || ''}
+                    initialFeedback={message.feedback || 'NONE'}
+                  />
+                )}
               </View>
             ))}
 
-            {loading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={[styles.loadingText, { color: colors.textSecondary, fontFamily: 'Inter_400Regular' }]}>
-                  Dr. {mentorName} está analisando...
-                </Text>
+            {isTyping && (
+              <View style={styles.botMessageContainer}>
+                <TypingBubble />
               </View>
             )}
           </ScrollView>
@@ -347,11 +344,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
     marginBottom: 4,
     height: 24,
-  },
-  bookmarkBtn: {
-    alignSelf: 'flex-end',
-    marginTop: 8,
-    padding: 4,
   },
   loadingContainer: {
     flexDirection: 'row',

@@ -15,14 +15,27 @@ function InnerLayout() {
   return (
     <PaperProvider theme={paperTheme}>
       <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="(auth)/login" />
-          <Stack.Screen name="(auth)/signup" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="(mentor)" />
-          <Stack.Screen name="chat/[mentorId]" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: 'slide_from_right',
+            animationDuration: 280,
+          }}
+        >
+          <Stack.Screen name="index" options={{ animation: 'fade' }} />
+          <Stack.Screen name="onboarding" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="(auth)/login" options={{ animation: 'fade' }} />
+          <Stack.Screen name="(auth)/signup" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+          <Stack.Screen name="(mentor)" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen
+            name="chat/[mentorId]"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_bottom',
+              animationDuration: 320,
+            }}
+          />
           <Stack.Screen
             name="conversation/[conversationId]"
             options={{
@@ -31,6 +44,7 @@ function InnerLayout() {
               headerStyle: { backgroundColor: colors.headerBg },
               headerTintColor: colors.headerText,
               headerTitleStyle: { fontFamily: 'Inter_700Bold' },
+              animation: 'slide_from_right',
             }}
           />
         </Stack>

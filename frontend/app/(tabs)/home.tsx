@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Pressable } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, Pressable, Image } from 'react-native';
 import { Text, Card, Avatar, Chip, ActivityIndicator, Searchbar, Divider, IconButton, Surface, Button } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { getMentors, getConversations } from '../../services/api';
@@ -323,12 +323,19 @@ export default function HomeScreen() {
                       data-testid={`mentor-card-${mentor.id}`}
                     >
                       <Card.Content style={styles.mentorCardContent}>
-                        <Avatar.Text
-                          size={64}
-                          label={mentor.full_name.substring(0, 2).toUpperCase()}
-                          style={[styles.avatar, { backgroundColor: colors.primary }]}
-                          labelStyle={{ fontFamily: 'Inter_700Bold' }}
-                        />
+                        {mentor.avatar_url ? (
+                          <Image
+                            source={{ uri: mentor.avatar_url }}
+                            style={{ width: 64, height: 64, borderRadius: 32, marginBottom: 4 }}
+                          />
+                        ) : (
+                          <Avatar.Text
+                            size={64}
+                            label={mentor.full_name.substring(0, 2).toUpperCase()}
+                            style={[styles.avatar, { backgroundColor: colors.primary }]}
+                            labelStyle={{ fontFamily: 'Inter_700Bold' }}
+                          />
+                        )}
                         <Text
                           variant="titleSmall"
                           style={{ fontFamily: 'Inter_700Bold', color: colors.text, marginTop: 10, textAlign: 'center' }}

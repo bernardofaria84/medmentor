@@ -21,6 +21,9 @@ import { useAppTheme } from '../../contexts/ThemeContext';
 import { useBookmarks } from '../../hooks/useBookmarks';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { WhisperSpinner } from '../../components/WhisperSpinner';
+import { MessageActionBar } from '../../components/MessageActionBar';
+import { TypingBubble } from '../../components/TypingBubble';
+import * as Haptics from 'expo-haptics';
 
 function exportSOAPAsPDF(soapSummary: string) {
   if (Platform.OS === 'web') {
@@ -55,13 +58,14 @@ export default function ConversationScreen() {
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const { colors } = useAppTheme();
 
   // Mentor name
   const [mentorName, setMentorName] = useState('');
 
-  // Bookmarks
+  // Bookmarks are now handled inside MessageActionBar
   const { isBookmarked, toggleBookmark } = useBookmarks();
 
   // SOAP Modal states
@@ -121,12 +125,14 @@ export default function ConversationScreen() {
   const handleSend = async () => {
     if (!inputText.trim() || sending) return;
 
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const question = inputText.trim();
     setInputText('');
     Keyboard.dismiss();
 
     try {
       setSending(true);
+      setIsTyping(true);
       const conversations = await getConversations();
       const currentConv = conversations.find(
         (c: any) => c.id === conversationId
@@ -137,10 +143,14 @@ export default function ConversationScreen() {
       }
 
       await sendChatMessage(currentConv.mentor_id, question, conversationId as string);
+      setIsTyping(false);
       await loadMessages();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
       console.error('Error sending message:', error);
+      setIsTyping(false);
       Alert.alert('Erro', error.message || 'Nao foi possivel enviar a mensagem');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setSending(false);
     }
@@ -178,7 +188,6 @@ export default function ConversationScreen() {
 
   const renderMessage = (message: any) => {
     const isUser = message.sender_type === 'USER';
-    const bookmarked = !isUser && isBookmarked(message.id);
 
     return (
       <View
@@ -214,26 +223,17 @@ export default function ConversationScreen() {
                 ))}
               </View>
             )}
-            {!isUser && (
-              <TouchableOpacity
-                onPress={() => toggleBookmark({
-                  messageId: message.id,
-                  content: message.content,
-                  mentorName,
-                  conversationId: conversationId as string,
-                })}
-                style={styles.bookmarkBtn}
-                data-testid={`bookmark-msg-${message.id}`}
-              >
-                <MaterialCommunityIcons
-                  name={bookmarked ? 'bookmark' : 'bookmark-outline'}
-                  size={16}
-                  color={bookmarked ? '#f59e0b' : colors.textTertiary}
-                />
-              </TouchableOpacity>
-            )}
           </Card.Content>
         </Card>
+        {!isUser && (
+          <MessageActionBar
+            messageId={message.id}
+            content={message.content}
+            mentorName={mentorName}
+            conversationId={conversationId as string}
+            initialFeedback={message.feedback || 'NONE'}
+          />
+        )}
       </View>
     );
   };
@@ -278,7 +278,12 @@ export default function ConversationScreen() {
           }
         >
           {messages.map(renderMessage)}
-          {sending && (
+          {isTyping && (
+            <View style={styles.botMessage}>
+              <TypingBubble />
+            </View>
+          )}
+          {sending && !isTyping && (
             <View style={styles.loadingMessage}>
               <ActivityIndicator size="small" color={colors.primary} />
               <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Enviando...</Text>

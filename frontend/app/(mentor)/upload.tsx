@@ -1,35 +1,77 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform, Alert, TouchableOpacity } from 'react-native';
 import { Text, Card, TextInput, Button, ProgressBar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../../services/api';
 import * as DocumentPicker from 'expo-document-picker';
+import { useAppTheme } from '../../contexts/ThemeContext';
+import * as Haptics from 'expo-haptics';
+
+type FileTypeInfo = {
+  label: string;
+  icon: string;
+  mime: string[];
+  ext: string;
+  color: string;
+};
+
+const FILE_TYPES: Record<string, FileTypeInfo> = {
+  pdf: { label: 'PDF', icon: 'file-pdf-box', mime: ['application/pdf'], ext: '.pdf', color: '#EF4444' },
+  docx: { label: 'Word (DOCX)', icon: 'file-word-box', mime: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'], ext: '.docx', color: '#3B82F6' },
+  video: { label: 'Vídeo (MP4)', icon: 'file-video-outline', mime: ['video/mp4'], ext: '.mp4', color: '#8B5CF6' },
+  audio: { label: 'Áudio (MP3/WAV)', icon: 'file-music-outline', mime: ['audio/mpeg', 'audio/wav', 'audio/m4a', 'audio/ogg'], ext: '.mp3/.wav', color: '#F59E0B' },
+};
 
 export default function UploadContent() {
   const [title, setTitle] = useState('');
   const [file, setFile] = useState<any>(null);
+  const [fileType, setFileType] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const router = useRouter();
+  const { colors } = useAppTheme();
 
   const pickDocument = async () => {
     try {
+      const mimeTypes = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'video/mp4',
+        'audio/mpeg', 'audio/wav', 'audio/m4a', 'audio/ogg',
+        '*/*',
+      ];
       const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/pdf',
+        type: mimeTypes,
         copyToCacheDirectory: true,
+        multiple: false,
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
-        setFile(result.assets[0]);
+        const asset = result.assets[0];
+        setFile(asset);
+        const name = asset.name || '';
+        // Auto-detect type
+        let detected = 'pdf';
+        if (name.endsWith('.docx')) detected = 'docx';
+        else if (name.endsWith('.mp4')) detected = 'video';
+        else if (name.endsWith('.mp3') || name.endsWith('.wav') || name.endsWith('.m4a') || name.endsWith('.ogg') || name.endsWith('.flac')) detected = 'audio';
+        setFileType(detected);
         if (!title) {
-          setTitle(result.assets[0].name.replace('.pdf', ''));
+          setTitle(name.replace(/\.[^/.]+$/, ''));
         }
+        Haptics.selectionAsync();
       }
     } catch (error) {
       console.error('Error picking document:', error);
       Alert.alert('Erro', 'Erro ao selecionar arquivo');
     }
+  };
+
+  const getFileMime = () => {
+    if (!file || !fileType) return 'application/octet-stream';
+    const ft = FILE_TYPES[fileType];
+    return ft?.mime[0] || 'application/octet-stream';
   };
 
   const handleUpload = async () => {
@@ -43,27 +85,24 @@ export default function UploadContent() {
 
     try {
       const formData = new FormData();
-      formData.append('title', title);
+      const mime = getFileMime();
       
       // For web and mobile compatibility
       if (Platform.OS === 'web') {
-        // On web, we need to fetch the file as a Blob first
         const response = await fetch(file.uri);
         const blob = await response.blob();
-        const webFile = new File([blob], file.name, { type: 'application/pdf' });
+        const webFile = new File([blob], file.name, { type: mime });
         formData.append('file', webFile);
       } else {
         formData.append('file', {
           uri: file.uri,
-          type: 'application/pdf',
+          type: mime,
           name: file.name,
         } as any);
       }
 
       const response = await api.post('/api/mentor/content/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = progressEvent.total
             ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
@@ -72,18 +111,20 @@ export default function UploadContent() {
         },
       });
 
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       if (Platform.OS === 'web') {
         window.alert('Conteúdo enviado com sucesso! Está sendo processado.');
         router.back();
       } else {
         Alert.alert(
           'Sucesso!',
-          'Conteúdo enviado e está sendo processado. Você será notificado quando estiver pronto.',
+          'Conteúdo enviado e está sendo processado.',
           [{ text: 'OK', onPress: () => router.back() }]
         );
       }
     } catch (error: any) {
       console.error('Upload error:', error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('Erro', error.response?.data?.detail || 'Erro ao fazer upload');
     } finally {
       setUploading(false);
@@ -91,17 +132,39 @@ export default function UploadContent() {
     }
   };
 
+  const currentTypeInfo = fileType ? FILE_TYPES[fileType] : null;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Card style={styles.card}>
+        <Card style={[styles.card, { backgroundColor: colors.surface }]}>
           <Card.Content>
-            <Text variant="titleLarge" style={styles.cardTitle}>
+            <Text variant="titleLarge" style={[styles.cardTitle, { color: colors.text, fontFamily: 'Inter_700Bold' }]}>
               Upload de Conteúdo
             </Text>
-            <Text variant="bodyMedium" style={styles.cardSubtitle}>
-              Envie materiais em PDF para enriquecer sua base de conhecimento
+            <Text variant="bodyMedium" style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
+              Envie PDF, DOCX, vídeos ou áudios para enriquecer sua base de conhecimento
             </Text>
+
+            {/* File type selector */}
+            <View style={styles.typeGrid}>
+              {Object.entries(FILE_TYPES).map(([key, info]) => (
+                <TouchableOpacity
+                  key={key}
+                  onPress={() => setFileType(key)}
+                  style={[
+                    styles.typeBtn,
+                    { borderColor: fileType === key ? info.color : colors.border, borderWidth: fileType === key ? 2 : 1 },
+                    fileType === key && { backgroundColor: info.color + '15' },
+                  ]}
+                >
+                  <MaterialCommunityIcons name={info.icon as any} size={24} color={fileType === key ? info.color : colors.textSecondary} />
+                  <Text style={{ color: fileType === key ? info.color : colors.textSecondary, fontSize: 11, fontFamily: 'Inter_700Bold', marginTop: 4, textAlign: 'center' }}>
+                    {info.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
             <TextInput
               label="Título do Conteúdo"
@@ -113,24 +176,24 @@ export default function UploadContent() {
               placeholder="Ex: Guia de Cardiologia Avançada"
             />
 
-            <Card style={styles.fileCard} onPress={!uploading ? pickDocument : undefined}>
+            <Card style={[styles.fileCard, { backgroundColor: colors.surfaceVariant }]} onPress={!uploading ? pickDocument : undefined}>
               <Card.Content style={styles.fileContent}>
                 <MaterialCommunityIcons
-                  name={file ? 'file-pdf-box' : 'cloud-upload'}
+                  name={(file && currentTypeInfo ? currentTypeInfo.icon : 'cloud-upload') as any}
                   size={48}
-                  color={file ? '#ef4444' : '#94a3b8'}
+                  color={file && currentTypeInfo ? currentTypeInfo.color : colors.textTertiary}
                 />
-                <Text variant="titleMedium" style={styles.fileName}>
-                  {file ? file.name : 'Selecionar arquivo PDF'}
+                <Text variant="titleMedium" style={[styles.fileName, { color: colors.text }]}>
+                  {file ? file.name : `Selecionar arquivo${fileType ? ' ' + FILE_TYPES[fileType].label : ''}`}
                 </Text>
                 {file && (
-                  <Text variant="bodySmall" style={styles.fileSize}>
+                  <Text variant="bodySmall" style={[styles.fileSize, { color: colors.textSecondary }]}>
                     {(file.size / 1024 / 1024).toFixed(2)} MB
                   </Text>
                 )}
                 {!file && (
-                  <Text variant="bodySmall" style={styles.fileHint}>
-                    Clique para selecionar um arquivo PDF
+                  <Text variant="bodySmall" style={[styles.fileHint, { color: colors.textTertiary }]}>
+                    Formatos: PDF, DOCX, MP4, MP3, WAV
                   </Text>
                 )}
               </Card.Content>
@@ -181,6 +244,20 @@ export default function UploadContent() {
 }
 
 const styles = StyleSheet.create({
+  typeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  typeBtn: {
+    flex: 1,
+    minWidth: 70,
+    padding: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',

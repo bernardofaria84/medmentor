@@ -1,5 +1,6 @@
 """Analytics router: impactometer and detailed analytics endpoints."""
 import re
+import os
 from datetime import datetime, timedelta
 from collections import defaultdict
 from fastapi import APIRouter, HTTPException, Depends
@@ -45,7 +46,6 @@ async def get_feedback_details_endpoint(current_user: dict = Depends(get_current
 
 @router.get("/mentor/impactometer")
 async def get_impactometer(current_user: dict = Depends(get_current_user)):
-    """Get comprehensive Impactometer dashboard data"""
     if current_user["user_type"] != "mentor":
         raise HTTPException(status_code=403, detail="Access denied")
 
@@ -128,3 +128,76 @@ async def get_impactometer(current_user: dict = Depends(get_current_user)):
             for msg in user_messages[:10]
         ],
     }
+
+
+@router.get("/mentors/analytics/ai-insights")
+async def get_ai_insights(current_user: dict = Depends(get_current_user)):
+    """Generate AI-powered insights from conversation data. Cached for 24 hours."""
+    if current_user["user_type"] != "mentor":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    mentor_id = current_user["user_id"]
+
+    # Check cache (valid for 24h)
+    cached = await db.ai_insights_cache.find_one({"mentor_id": mentor_id})
+    if cached:
+        cache_age = (datetime.utcnow() - cached.get("generated_at", datetime.utcnow()))
+        if cache_age.total_seconds() < 86400:
+            return {"insights": cached["insights"], "generated_at": cached["generated_at"].isoformat(), "cached": True}
+
+    # Gather last 50 user questions
+    conversations = await db.conversations.find(
+        {"mentor_id": mentor_id}, {"_id": 1}
+    ).to_list(1000)
+    cids = [c["_id"] for c in conversations]
+
+    user_messages = await db.messages.find({
+        "conversation_id": {"$in": cids},
+        "sender_type": SenderType.USER,
+    }, {"content": 1, "sent_at": 1}).sort("sent_at", -1).to_list(50)
+
+    if len(user_messages) < 5:
+        return {"insights": [], "generated_at": datetime.utcnow().isoformat(), "cached": False}
+
+    questions_text = "\n".join([f"- {m.get('content', '')[:120]}" for m in user_messages])
+
+    try:
+        from openai import AsyncOpenAI
+        client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+        response = await client.chat.completions.create(
+            model=os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Você é um assistente de análise médica. Com base nas perguntas reais "
+                        "feitas pelos médicos ao mentor de IA, gere exatamente 3 insights práticos "
+                        "em português do Brasil. Cada insight deve ser: concreto, acionável e baseado "
+                        "em padrões observados nas perguntas. Responda em JSON com a chave 'insights' "
+                        "contendo uma lista de objetos: {titulo, descricao, icone} onde icone é um "
+                        "nome de MaterialCommunityIcons (ex: trending-up, alert, lightbulb-outline)."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": f"Perguntas feitas ao mentor:\n{questions_text}",
+                },
+            ],
+            temperature=0.4,
+            max_tokens=600,
+            response_format={"type": "json_object"},
+        )
+        data = __import__("json").loads(response.choices[0].message.content)
+        insights = data.get("insights", [])
+    except Exception as e:
+        logger.error(f"AI insights generation failed: {e}")
+        insights = []
+
+    # Cache result
+    now = datetime.utcnow()
+    await db.ai_insights_cache.update_one(
+        {"mentor_id": mentor_id},
+        {"$set": {"insights": insights, "generated_at": now}},
+        upsert=True,
+    )
+    return {"insights": insights, "generated_at": now.isoformat(), "cached": False}

@@ -6,6 +6,7 @@ from enum import Enum
 # Enums
 class ContentType(str, Enum):
     PDF = "PDF"
+    DOCX = "DOCX"
     VIDEO = "VIDEO"
     AUDIO = "AUDIO"
     TEXT = "TEXT"
