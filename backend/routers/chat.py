@@ -57,22 +57,26 @@ async def universal_search(q: str, current_user: dict = Depends(get_current_user
     query = q.strip()
     logger.info(f"Universal search: '{query}' by user {current_user['user_id']}")
     try:
-        from models import ContentStatus
-        query_embedding = rag_service.generate_embedding(query)
-        all_content = await db.mentor_content.find(
-            {"status": ContentStatus.COMPLETED},
-            {"mentor_id": 1, "filename": 1, "chunks": 1},
-        ).limit(100).to_list(100)
-        if not all_content:
+        # Bug #1 fix: generate_embedding is async — must be awaited
+        query_embedding = await rag_service.generate_embedding(query)
+
+        # Bug #2 fix: chunks live in the content_chunks collection, NOT embedded
+        # inside mentor_content documents. Query content_chunks directly.
+        raw_chunks = await db.content_chunks.find(
+            {},
+            {"embedding": 1, "text": 1, "mentor_id": 1, "title": 1},
+        ).limit(2000).to_list(2000)
+        if not raw_chunks:
             return {"results": [], "query": query, "total_results": 0}
         all_chunks, chunk_meta = [], []
-        for content in all_content:
-            mid = content["mentor_id"]
-            ct = content.get("filename", "Conteudo")
-            for chunk in content.get("chunks", []):
-                if chunk.get("embedding"):
-                    all_chunks.append(chunk["embedding"])
-                    chunk_meta.append({"text": chunk["text"], "mentor_id": mid, "content_title": ct})
+        for chunk in raw_chunks:
+            if chunk.get("embedding"):
+                all_chunks.append(chunk["embedding"])
+                chunk_meta.append({
+                    "text": chunk.get("text", ""),
+                    "mentor_id": chunk.get("mentor_id", ""),
+                    "content_title": chunk.get("title", "Conteúdo"),
+                })
         if not all_chunks:
             return {"results": [], "query": query, "total_results": 0}
         indices, scores = rag_service.cosine_similarity_search(query_embedding, all_chunks, top_k=15, min_similarity=0.35)
