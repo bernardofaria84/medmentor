@@ -34,12 +34,9 @@ class MultiAIRAGService:
         self.openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
         self.anthropic_client = AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
         
-        # NOTE: When changing the embedding model, you MUST run the migration script
-        # backend/scripts/migrate_embeddings.py to regenerate all existing embeddings.
-        # Embeddings from different models are INCOMPATIBLE with each other.
-        # DEFAULT stays as ada-002 for backward-compat with existing DB embeddings.
-        # Set EMBEDDING_MODEL=text-embedding-3-small ONLY after running migrate_embeddings.py
-        self.embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-ada-002")
+        # text-embedding-3-small is the default after running migrate_embeddings.py
+        # To revert: set EMBEDDING_MODEL=text-embedding-ada-002 in .env
+        self.embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
         self.chunk_size = 500  # tokens
         self.chunk_overlap = 50  # tokens
         
